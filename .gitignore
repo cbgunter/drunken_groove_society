@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.js.map
+frontend/dist/
+backend/dist/
+.aws-sam/
+samconfig.toml.bak
+.claude/

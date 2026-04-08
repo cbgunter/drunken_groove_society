@@ -1,0 +1,8 @@
+[default.deploy.parameters]
+stack_name          = "drunken-groove-society"
+s3_bucket           = "aws-sam-cli-managed-default-samclisourcebucket-yhl0vje1awdi"
+s3_prefix           = "drunken-groove-society"
+region              = "us-east-1"
+confirm_changeset   = false
+capabilities        = "CAPABILITY_IAM"
+disable_rollback    = false
