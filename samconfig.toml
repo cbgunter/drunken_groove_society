@@ -6,3 +6,4 @@ region              = "us-east-1"
 confirm_changeset   = false
 capabilities        = "CAPABILITY_IAM"
 disable_rollback    = false
+parameter_overrides = "CertificateArn=arn:aws:acm:us-east-1:466850516129:certificate/fbe72d4c-6701-474e-8c27-3c23b474eed6 CustomDomain=dgs.caseyhunter.net"

@@ -12,7 +12,10 @@ Globals:
       Variables:
         TABLE_NAME: !Ref SessionsTable
         ANTHROPIC_API_KEY: !Ref AnthropicApiKey
-        ALLOWED_ORIGIN: !Sub 'https://${CloudFrontDistribution.DomainName}'
+        ALLOWED_ORIGIN: !If
+          - HasCustomDomain
+          - !Sub 'https://${CustomDomain}'
+          - !Sub 'https://${CloudFrontDistribution.DomainName}'
 
 Parameters:
   AnthropicApiKey:
@@ -20,6 +23,19 @@ Parameters:
     Default: PLACEHOLDER
     NoEcho: true
     Description: Anthropic API key for summary generation (leave PLACEHOLDER until key is ready)
+  CertificateArn:
+    Type: String
+    Default: ''
+    Description: ACM certificate ARN for custom domain (us-east-1). Leave empty to use CloudFront default domain.
+  CustomDomain:
+    Type: String
+    Default: ''
+    Description: Custom domain name (e.g. dgs.caseyhunter.net). Leave empty to use CloudFront default domain.
+
+Conditions:
+  HasCustomDomain: !And
+    - !Not [!Equals [!Ref CertificateArn, '']]
+    - !Not [!Equals [!Ref CustomDomain, '']]
 
 Resources:
 
@@ -31,6 +47,7 @@ Resources:
       StageName: prod
       CorsConfiguration:
         AllowOrigins:
+          - !If [HasCustomDomain, !Sub 'https://${CustomDomain}', !Sub 'https://${CloudFrontDistribution.DomainName}']
           - !Sub 'https://${CloudFrontDistribution.DomainName}'
           - 'http://localhost:5173'
         AllowMethods:
@@ -204,6 +221,16 @@ Resources:
         Enabled: true
         DefaultRootObject: index.html
         PriceClass: PriceClass_100
+        Aliases: !If
+          - HasCustomDomain
+          - [!Ref CustomDomain]
+          - !Ref AWS::NoValue
+        ViewerCertificate: !If
+          - HasCustomDomain
+          - AcmCertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
         Origins:
           - Id: S3Origin
             DomainName: !GetAtt FrontendBucket.RegionalDomainName
