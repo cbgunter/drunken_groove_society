@@ -5,9 +5,11 @@ import { api } from '../../api/client'
 interface Props {
   entry: Entry
   onChange: (updates: Partial<Entry>) => void
+  onSave: () => void
+  isSaving: boolean
 }
 
-export default function PickCard({ entry, onChange }: Props) {
+export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
   const [artist, setArtist] = useState(entry.artist)
   const [album, setAlbum] = useState(entry.title)
   const [isLooking, setIsLooking] = useState(false)
@@ -125,14 +127,23 @@ export default function PickCard({ entry, onChange }: Props) {
         </p>
       )}
 
-      {/* Lookup button */}
-      <button
-        className="btn-primary text-xs w-full justify-center"
-        onClick={handleLookup}
-        disabled={isLooking || !artist.trim() || !album.trim()}
-      >
-        {isLooking ? '🔍 Looking up…' : looked ? '↻ Re-lookup' : '🔍 Look up band & album info'}
-      </button>
+      {/* Lookup + Save buttons */}
+      <div className="flex gap-2">
+        <button
+          className="btn-primary text-xs flex-1 justify-center"
+          onClick={handleLookup}
+          disabled={isLooking || !artist.trim() || !album.trim()}
+        >
+          {isLooking ? '🔍 Looking up…' : looked ? '↻ Re-lookup' : '🔍 Look up'}
+        </button>
+        <button
+          className="btn-ghost text-xs flex-1 justify-center"
+          onClick={onSave}
+          disabled={isSaving || !artist.trim() || !album.trim()}
+        >
+          {isSaving ? 'Saving…' : '💾 Save'}
+        </button>
+      </div>
     </div>
   )
 }

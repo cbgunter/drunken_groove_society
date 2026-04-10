@@ -31,25 +31,26 @@ export default function SelectionView({ session, onSave, isSaving }: Props) {
             key={entry.id}
             entry={entry}
             onChange={(updates) => updateEntry(entry.id, updates)}
+            onSave={onSave}
+            isSaving={isSaving}
           />
         ))}
       </div>
 
-      <div className="flex items-center justify-between pt-2 flex-wrap gap-3">
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {allPicked
-            ? 'All picks entered. Save to share with the crew.'
-            : 'Enter at least band and album title for each person to continue.'}
-        </p>
-        <button
-          className="btn-primary"
-          onClick={onSave}
-          disabled={isSaving || !allPicked}
-          title={!allPicked ? 'Enter all 3 picks first' : undefined}
-        >
-          {isSaving ? 'Saving…' : '💾 Save picks & share'}
-        </button>
-      </div>
+      {allPicked && (
+        <div className="flex items-center justify-between pt-2 flex-wrap gap-3">
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            All picks entered — save to share with the crew.
+          </p>
+          <button
+            className="btn-primary"
+            onClick={onSave}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving…' : '💾 Save all & share'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
