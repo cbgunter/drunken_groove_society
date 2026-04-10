@@ -11,7 +11,7 @@ interface Props {
 const STATUS_CONFIG: Record<SessionStatus, { label: string; dot: string; borderColor: string }> = {
   empty:     { label: 'No picks yet',      dot: 'var(--text-muted)',  borderColor: 'var(--border)' },
   picking:   { label: 'Albums selected',   dot: 'var(--accent)',      borderColor: 'var(--accent)' },
-  listening: { label: 'Notes in',          dot: '#d97706',            borderColor: '#d97706' },
+  listening: { label: 'Albums Selected',   dot: '#d97706',            borderColor: '#d97706' },
   done:      { label: 'Meeting complete',  dot: '#059669',            borderColor: '#059669' },
 }
 

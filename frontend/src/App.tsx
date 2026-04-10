@@ -6,7 +6,7 @@ import AppShell from './components/layout/AppShell'
 import CalendarView from './components/calendar/CalendarView'
 import SessionView from './components/session/SessionView'
 import RosterSetup from './components/roster/RosterSetup'
-import { HISTORIC_SESSIONS, HISTORIC_ROSTER } from './utils/historicSeed'
+import { HISTORIC_SESSIONS, HISTORIC_ROSTER, SEED_VERSION } from './utils/historicSeed'
 
 function getOrCreateUserId(): string {
   let id = localStorage.getItem('dgs_user_id')
@@ -25,7 +25,7 @@ type View = 'calendar' | 'month' | 'roster-setup' | 'roster-edit'
 
 export default function App() {
   const { session, isLoading, error, loadOrCreateForMonth } = useSessionStore()
-  const { roster, seeded, setRoster, putLocalSession, updateMonthSummary, markSeeded } =
+  const { roster, seedVersion, setRoster, putLocalSession, updateMonthSummary, markSeeded } =
     useCalendarStore()
 
   const [view, setView] = useState<View>('calendar')
@@ -45,16 +45,16 @@ export default function App() {
     localStorage.setItem('dgs_theme', dark ? 'dark' : 'light')
   }, [dark])
 
-  // One-time seed of historic data
+  // Seed historic data — re-runs whenever SEED_VERSION is bumped
   useEffect(() => {
-    if (seeded) return
+    if (seedVersion >= SEED_VERSION) return
     // Set roster from historic data if not already configured
     if (!roster) setRoster(HISTORIC_ROSTER)
     // Populate local session cache + calendar summaries
     for (const session of HISTORIC_SESSIONS) {
       putLocalSession(session)
       updateMonthSummary(session.month, {
-        status: session.locked ? 'done' : 'picking',
+        status: session.locked ? 'done' : session.phase === 'listening' ? 'listening' : 'picking',
         picks: session.entries.map((e) => ({
           selector: e.selector,
           artist: e.artist,
@@ -63,7 +63,7 @@ export default function App() {
         overallRatings: session.overallRatings,
       })
     }
-    markSeeded()
+    markSeeded(SEED_VERSION)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle URL param on initial load (deep-link to a month)

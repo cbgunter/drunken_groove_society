@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid'
 import type { Session } from '../types'
 
 interface PickData {
@@ -7,11 +6,12 @@ interface PickData {
   title: string
 }
 
+// Use fixed IDs so overallRatings keys are stable across re-seeds
 function makeSession(
   month: string,
   picks: PickData[],
   done = false,
-  overallRatings?: Record<string, number>,
+  ratings?: number[],  // per-pick rating in same order as picks array
 ): Session {
   const [year, mon] = month.split('-')
   const date = `${year}-${mon}-01`
@@ -21,8 +21,9 @@ function makeSession(
     monthDate.toLocaleString('default', { month: 'long', year: 'numeric' }) +
     ' — Listening Session'
 
-  const entries = picks.map((pick) => ({
-    id: nanoid(10),
+  // Deterministic IDs so ratings map stays consistent
+  const entries = picks.map((pick, i) => ({
+    id: `${month}-e${i}`,
     selector: pick.selector,
     artist: pick.artist,
     title: pick.title,
@@ -36,6 +37,10 @@ function makeSession(
     tracklist: [],
     external_link: undefined,
   }))
+
+  const overallRatings: Record<string, number> | undefined = ratings
+    ? Object.fromEntries(entries.map((e, i) => [e.id, ratings[i]]))
+    : undefined
 
   return {
     id: month,
@@ -51,17 +56,16 @@ function makeSession(
   }
 }
 
-// Note: user wrote "2025-January/February" — corrected to 2026-01 / 2026-02
 export const HISTORIC_SESSIONS: Session[] = [
   makeSession(
     '2025-12',
     [
-      { selector: 'Corey', artist: 'The Promise Ring', title: 'The Horse Latitudes' },
-      { selector: 'Doug',  artist: 'Mt. Joy',          title: 'Hope We Have Fun' },
+      { selector: 'Corey', artist: 'The Promise Ring',  title: 'The Horse Latitudes' },
+      { selector: 'Doug',  artist: 'Mt. Joy',           title: 'Hope We Have Fun' },
       { selector: 'Mike',  artist: 'Radiohead',         title: 'In Rainbows' },
     ],
     true,
-    { 'entry-0': 3.7, 'entry-1': 4.0, 'entry-2': 4.8 },
+    [3.7, 4.0, 4.8],
   ),
   makeSession(
     '2026-01',
@@ -71,7 +75,7 @@ export const HISTORIC_SESSIONS: Session[] = [
       { selector: 'Mike',  artist: 'Joy Division',    title: 'Unknown Pleasures' },
     ],
     true,
-    { 'entry-0': 4.2, 'entry-1': 3.3, 'entry-2': 4.7 },
+    [4.2, 3.3, 4.7],
   ),
   makeSession(
     '2026-02',
@@ -81,7 +85,7 @@ export const HISTORIC_SESSIONS: Session[] = [
       { selector: 'Corey', artist: 'Bloc Party',        title: 'Silent Alarm' },
     ],
     true,
-    { 'entry-0': 4.0, 'entry-1': 3.5, 'entry-2': 4.3 },
+    [4.0, 3.5, 4.3],
   ),
   makeSession(
     '2026-03',
@@ -91,8 +95,19 @@ export const HISTORIC_SESSIONS: Session[] = [
       { selector: 'Mike',  artist: 'Miles Davis',      title: 'Kind of Blue' },
     ],
     true,
-    { 'entry-0': 4.5, 'entry-1': 4.2, 'entry-2': 5.0 },
+    [4.5, 4.2, 5.0],
   ),
+  // April — picks selected, no meeting this month
+  makeSession(
+    '2026-04',
+    [
+      { selector: 'Corey', artist: 'Interpol',          title: 'Turn On the Bright Lights' },
+      { selector: 'Doug',  artist: 'Wilco',             title: 'Yankee Hotel Foxtrot' },
+      { selector: 'Mike',  artist: 'D\'Angelo',         title: 'Voodoo' },
+    ],
+    false,  // not done — no meeting
+  ),
+  // May — albums selected, meeting not yet held
   makeSession(
     '2026-05',
     [
@@ -100,9 +115,11 @@ export const HISTORIC_SESSIONS: Session[] = [
       { selector: 'Doug',  artist: 'Foals',           title: 'What Went Down' },
       { selector: 'Mike',  artist: 'Willie Colon',    title: 'La Cosa Nuestra' },
     ],
-    true,
-    { 'entry-0': 3.8, 'entry-1': 3.7, 'entry-2': 4.1 },
+    false,  // not done — meeting hasn't happened yet
   ),
 ]
 
 export const HISTORIC_ROSTER: [string, string, string] = ['Corey', 'Doug', 'Mike']
+
+// Bump this when seed data changes to force a re-seed on existing clients
+export const SEED_VERSION = 2

@@ -20,7 +20,7 @@ export interface CalendarState {
   roster: [string, string, string] | null
   summaries: Record<string, MonthSummary>   // keyed by YYYY-MM
   localSessions: Record<string, Session>    // seed/draft sessions not yet in DynamoDB
-  seeded: boolean                           // true after historicSeed has run once
+  seedVersion: number                        // bumped when seed data changes
 
   setRoster: (members: [string, string, string]) => void
   updateMonthSummary: (month: string, summary: MonthSummary) => void
@@ -28,7 +28,7 @@ export interface CalendarState {
   putLocalSession: (session: Session) => void
   getLocalSession: (month: string) => Session | null
   removeLocalSession: (month: string) => void
-  markSeeded: () => void
+  markSeeded: (version: number) => void
 }
 
 const EMPTY_SUMMARY: MonthSummary = { status: 'empty', picks: [] }
@@ -39,7 +39,7 @@ export const useCalendarStore = create<CalendarState>()(
       roster: null,
       summaries: {},
       localSessions: {},
-      seeded: false,
+      seedVersion: 0,
 
       setRoster: (members) => set({ roster: members }),
 
@@ -63,7 +63,7 @@ export const useCalendarStore = create<CalendarState>()(
           return { localSessions: next }
         }),
 
-      markSeeded: () => set({ seeded: true }),
+      markSeeded: (version) => set({ seedVersion: version }),
     }),
     { name: 'dgs-calendar' },
   ),
