@@ -115,7 +115,7 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
         : 0
     }
 
-    lockSession()
+    lockSession(overallRatings)
     await saveToRemote()
 
     // Update calendar cell

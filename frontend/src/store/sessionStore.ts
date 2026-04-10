@@ -56,7 +56,7 @@ interface SessionState {
   setActiveEntry: (id: string) => void
   updateSession: (updates: Partial<Pick<Session, 'title' | 'date'>>) => void
   updateEntry: (id: string, updates: Partial<Entry>) => void
-  lockSession: () => void
+  lockSession: (overallRatings?: Record<string, number>) => void
   loadOrCreateForMonth: (month: string, roster: string[]) => Promise<void>
   saveToRemote: () => Promise<string>
   clearError: () => void
@@ -94,10 +94,18 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     })
   },
 
-  lockSession: () => {
+  lockSession: (overallRatings?: Record<string, number>) => {
     const { session } = get()
     if (!session) return
-    set({ session: { ...session, locked: true, updatedAt: new Date().toISOString() } })
+    set({
+      session: {
+        ...session,
+        locked: true,
+        phase: 'done',
+        overallRatings: overallRatings ?? session.overallRatings,
+        updatedAt: new Date().toISOString(),
+      },
+    })
   },
 
   loadOrCreateForMonth: async (month, roster) => {

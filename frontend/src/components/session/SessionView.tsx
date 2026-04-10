@@ -58,9 +58,7 @@ export default function SessionView({ session, identity, month, onBack }: Props)
     setMeetingMode(true)
   }
 
-  function handleEndMeeting(overallRatings: Record<string, number>) {
-    updateSession({})
-    syncCalendar({ status: 'done' })
+  function handleEndMeeting(_overallRatings: Record<string, number>) {
     setMeetingMode(false)
   }
 
