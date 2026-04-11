@@ -125,47 +125,43 @@ export default function App() {
     }
   }
 
-  // User name prompt (one-time, inline in name-aware stores)
-  const [showNamePrompt, setShowNamePrompt] = useState(!userName)
-  const [nameInput, setNameInput] = useState('')
+  // Identity prompt — shown on first visit or when user clicks to change
+  const [showIdentityPrompt, setShowIdentityPrompt] = useState(!userName)
 
-  function saveName() {
-    const name = nameInput.trim() || 'Anonymous'
-    localStorage.setItem('dgs_user_name', name)
-    setUserName(name)
-    setShowNamePrompt(false)
-  }
+  const crewNames: string[] = roster ?? ['Corey', 'Doug', 'Mike']
 
   return (
-    <AppShell dark={dark} onToggleDark={() => setDark((d) => !d)} onHome={handleBackToCalendar}>
-      {/* Name prompt */}
-      {showNamePrompt && (
+    <AppShell
+      dark={dark}
+      onToggleDark={() => setDark((d) => !d)}
+      onHome={handleBackToCalendar}
+      userName={userName}
+      onChangeIdentity={() => setShowIdentityPrompt(true)}
+    >
+      {/* Identity picker — first visit or on request */}
+      {showIdentityPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div
-            className="w-full max-w-sm rounded-xl p-6 shadow-xl"
+            className="w-full max-w-xs rounded-xl p-6 shadow-xl space-y-4"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
           >
-            <h2 className="text-lg font-semibold mb-1">What's your name?</h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-              Shows next to your notes when you share them.
-            </p>
-            <input
-              autoFocus
-              type="text"
-              placeholder="e.g. Marcus"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && saveName()}
-              className="w-full rounded-lg px-3 py-2 text-sm mb-4 outline-none"
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-              }}
-            />
-            <button className="btn-primary w-full justify-center" onClick={saveName}>
-              Continue
-            </button>
+            <div>
+              <h2 className="text-lg font-semibold">Who are you?</h2>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+                Your name will be saved with your notes.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {crewNames.map((name) => (
+                <button
+                  key={name}
+                  className="btn-primary justify-center text-sm py-2.5"
+                  onClick={() => { handleIdentityChange(name); setShowIdentityPrompt(false) }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -205,7 +201,6 @@ export default function App() {
             <SessionView
               session={session}
               identity={{ userId, userName }}
-              onIdentityChange={handleIdentityChange}
               month={activeMonth!}
               onBack={handleBackToCalendar}
             />
