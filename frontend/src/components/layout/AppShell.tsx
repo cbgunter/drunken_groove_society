@@ -20,7 +20,7 @@ export default function AppShell({ dark, onToggleDark, onHome, userName, onChang
           onClick={onHome}
           className="flex items-center gap-2 transition-opacity hover:opacity-70"
         >
-          <span className="text-xl">🍺</span>
+          <img src="/logo.jpg" alt="DGS" className="w-8 h-8 rounded-full object-cover" style={{ background: '#fff' }} />
           <span className="font-semibold text-sm tracking-tight">Drunken Groove Society</span>
         </button>
 

@@ -14,12 +14,20 @@ export default function CalendarView({ onSelectMonth }: Props) {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-bold">Sessions</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-          Dec 2025 — Dec 2026 · One pick per person per month
-        </p>
+      {/* Hero */}
+      <div className="flex items-center gap-4 mb-6">
+        <img
+          src="/logo-grid.jpg"
+          alt="The Drunken Groove Society"
+          className="w-24 h-24 object-contain rounded-xl flex-shrink-0"
+          style={{ background: '#fff' }}
+        />
+        <div>
+          <h1 className="text-xl font-bold">Sessions</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            Dec 2025 — Dec 2026 · One pick per person per month
+          </p>
+        </div>
       </div>
 
       {/* Status legend */}
