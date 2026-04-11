@@ -11,6 +11,7 @@ import MeetingView from '../meeting/MeetingView'
 interface Props {
   session: Session
   identity: { userId: string; userName: string }
+  onIdentityChange: (name: string) => void
   month: string
   onBack: () => void
 }
@@ -24,7 +25,7 @@ function derivePhase(session: Session): 'selection' | 'listening' | 'done' {
   return session.phase === 'listening' ? 'listening' : 'listening'
 }
 
-export default function SessionView({ session, identity, month, onBack }: Props) {
+export default function SessionView({ session, identity, onIdentityChange, month, onBack }: Props) {
   const { saveToRemote, isSaving, updateSession } = useSessionStore()
   const { updateMonthSummary } = useCalendarStore()
   const { fetchPeerNotes, peerNotes } = useNotesStore()
@@ -73,7 +74,7 @@ export default function SessionView({ session, identity, month, onBack }: Props)
         >
           ✓ Meeting complete — session is read-only.
         </div>
-        <ListeningView session={session} identity={identity} locked={true} />
+        <ListeningView session={session} identity={identity} onIdentityChange={onIdentityChange} locked={true} />
       </div>
     )
   }
@@ -122,7 +123,7 @@ export default function SessionView({ session, identity, month, onBack }: Props)
           </button>
         </div>
       )}
-      <ListeningView session={session} identity={identity} locked={false} />
+      <ListeningView session={session} identity={identity} onIdentityChange={onIdentityChange} locked={false} />
     </div>
   )
 }

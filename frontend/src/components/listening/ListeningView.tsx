@@ -1,16 +1,19 @@
 import { useRef, useState } from 'react'
 import type { Session } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
+import { useCalendarStore } from '../../store/calendarStore'
 import { useListeningStore } from '../../store/listeningStore'
 import EntryMeta from '../entry/EntryMeta'
 import RichTextBlock from '../entry/RichTextBlock'
 import FunFacts from '../entry/FunFacts'
 import RatingPicker from './RatingPicker'
 import NoteHistory from './NoteHistory'
+import IdentityPicker from './IdentityPicker'
 
 interface Props {
   session: Session
   identity: { userId: string; userName: string }
+  onIdentityChange: (name: string) => void
   locked: boolean
 }
 
@@ -80,8 +83,9 @@ function TrackPillNotes({
   )
 }
 
-export default function ListeningView({ session, identity, locked }: Props) {
+export default function ListeningView({ session, identity, onIdentityChange, locked }: Props) {
   const { activeEntryId, setActiveEntry } = useSessionStore()
+  const roster = useCalendarStore((s) => s.roster) ?? ['Corey', 'Doug', 'Mike']
   const { getDraft, setDraft, setRating, getRating, getHistory, saveDraft, isSaving } =
     useListeningStore()
 
@@ -100,6 +104,15 @@ export default function ListeningView({ session, identity, locked }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Identity picker */}
+      {!locked && (
+        <IdentityPicker
+          roster={roster}
+          userName={identity.userName}
+          onSelect={onIdentityChange}
+        />
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
         {session.entries.map((entry) => {

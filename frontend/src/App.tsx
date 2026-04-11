@@ -8,11 +8,13 @@ import SessionView from './components/session/SessionView'
 import RosterSetup from './components/roster/RosterSetup'
 import { HISTORIC_SESSIONS, HISTORIC_ROSTER, SEED_VERSION } from './utils/historicSeed'
 
-function getOrCreateUserId(): string {
-  let id = localStorage.getItem('dgs_user_id')
+function getOrCreateUserId(name?: string): string {
+  // Each crew member gets a stable userId keyed to their name
+  const key = name ? `dgs_user_id_${name}` : 'dgs_user_id'
+  let id = localStorage.getItem(key)
   if (!id) {
     id = nanoid(10)
-    localStorage.setItem('dgs_user_id', id)
+    localStorage.setItem(key, id)
   }
   return id
 }
@@ -30,8 +32,14 @@ export default function App() {
 
   const [view, setView] = useState<View>('calendar')
   const [activeMonth, setActiveMonth] = useState<string | null>(null)
-  const [userId] = useState(getOrCreateUserId)
   const [userName, setUserName] = useState(getUserName)
+  const [userId, setUserId] = useState(() => getOrCreateUserId(getUserName() || undefined))
+
+  function handleIdentityChange(name: string) {
+    localStorage.setItem('dgs_user_name', name)
+    setUserName(name)
+    setUserId(getOrCreateUserId(name))
+  }
 
   // Dark mode
   const [dark, setDark] = useState(() => {
@@ -197,6 +205,7 @@ export default function App() {
             <SessionView
               session={session}
               identity={{ userId, userName }}
+              onIdentityChange={handleIdentityChange}
               month={activeMonth!}
               onBack={handleBackToCalendar}
             />
