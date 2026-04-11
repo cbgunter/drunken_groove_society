@@ -15,13 +15,12 @@ interface Props {
   onBack: () => void
 }
 
-function derivePhase(session: Session): 'selection' | 'listening' | 'done' {
+function derivePhase(session: Session, userName: string): 'selection' | 'listening' | 'done' {
   if (session.locked || session.phase === 'done') return 'done'
-  // Listening phase: all picks have a tracklist (lookup was done) OR at least all have artist+title
-  // We use tracklist as the signal that the full selection+lookup is complete
-  const allHaveArtist = session.entries.every((e) => e.artist.trim() && e.title.trim())
-  if (!allHaveArtist) return 'selection'
-  return session.phase === 'listening' ? 'listening' : 'listening'
+  // Only check the current user's pick — they can start listening once their own is saved
+  const myEntry = session.entries.find((e) => e.selector === userName)
+  if (!myEntry || !myEntry.artist.trim() || !myEntry.title.trim()) return 'selection'
+  return 'listening'
 }
 
 export default function SessionView({ session, identity, month, onBack }: Props) {
@@ -33,7 +32,7 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   const [meetingMode, setMeetingMode] = useState(false)
   const [allNotes, setAllNotes] = useState<UserSessionNotes[]>([])
 
-  const phase = derivePhase(session)
+  const phase = derivePhase(session, identity.userName)
   const { long } = formatMonthLabel(month)
 
   function syncCalendar(overrides?: { status?: 'picking' | 'listening' | 'done' }) {
@@ -102,7 +101,7 @@ export default function SessionView({ session, identity, month, onBack }: Props)
     return (
       <div className="space-y-4">
         <BackBar onBack={onBack} label={long} />
-        <SelectionView session={session} onSave={handleSave} isSaving={isSaving} />
+        <SelectionView session={session} userName={identity.userName} onSave={handleSave} isSaving={isSaving} />
       </div>
     )
   }
