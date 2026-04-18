@@ -1,10 +1,8 @@
 import { useRef, useState } from 'react'
-import type { Session } from '../../types'
+import type { Session, Entry } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useListeningStore } from '../../store/listeningStore'
 import EntryMeta from '../entry/EntryMeta'
-import RichTextBlock from '../entry/RichTextBlock'
-import FunFacts from '../entry/FunFacts'
 import RatingPicker from './RatingPicker'
 import NoteHistory from './NoteHistory'
 
@@ -80,6 +78,83 @@ function TrackPillNotes({
   )
 }
 
+function ListeningHints({ entry }: { entry: Entry }) {
+  const hasContent = entry.about_band || entry.about_album || entry.fun_facts.length > 0
+
+  if (!hasContent) return null
+
+  return (
+    <div
+      className="rounded-xl p-4 space-y-3"
+      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+    >
+      <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--accent)' }}>
+        Listening Hints
+      </h3>
+
+      {/* Genre tags */}
+      {entry.genre_tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {entry.genre_tags.map((tag) => (
+            <span key={tag} className="pill text-[10px]">{tag}</span>
+          ))}
+          {entry.year > 0 && <span className="pill text-[10px]">{entry.year}</span>}
+          {entry.format !== 'Other' && entry.format !== 'LP' && (
+            <span className="pill text-[10px]">{entry.format}</span>
+          )}
+        </div>
+      )}
+
+      {/* About sections */}
+      {entry.about_band && (
+        <div>
+          <p className="text-[11px] font-semibold mb-0.5" style={{ color: 'var(--text-secondary)' }}>About the band</p>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-primary)' }}>{entry.about_band}</p>
+        </div>
+      )}
+      {entry.about_album && (
+        <div>
+          <p className="text-[11px] font-semibold mb-0.5" style={{ color: 'var(--text-secondary)' }}>About the album</p>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-primary)' }}>{entry.about_album}</p>
+        </div>
+      )}
+
+      {/* Fun facts */}
+      {entry.fun_facts.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Quick facts</p>
+          <ul className="space-y-1">
+            {entry.fun_facts.map((fact, i) => (
+              <li key={i} className="text-xs leading-relaxed flex gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                <span className="flex-shrink-0" style={{ color: 'var(--accent)' }}>•</span>
+                {fact}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Tracklist */}
+      {entry.tracklist.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Tracklist</p>
+          <div className="flex flex-wrap gap-1">
+            {entry.tracklist.map((track, i) => (
+              <span
+                key={i}
+                className="text-[10px] px-2 py-0.5 rounded-full"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+              >
+                {i + 1}. {track}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ListeningView({ session, identity, locked }: Props) {
   const { activeEntryId, setActiveEntry } = useSessionStore()
   const { getDraft, setDraft, setRating, getRating, getHistory, saveDraft, isSaving } =
@@ -123,13 +198,10 @@ export default function ListeningView({ session, identity, locked }: Props) {
 
       {/* Album card */}
       <div
-        className="rounded-xl p-4 space-y-4"
+        className="rounded-xl p-4 space-y-3"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
       >
         <EntryMeta entry={activeEntry} />
-        <RichTextBlock label="About the band" content={activeEntry.about_band} />
-        <RichTextBlock label="About the album" content={activeEntry.about_album} />
-        <FunFacts facts={activeEntry.fun_facts} />
 
         {activeEntry.external_link && (
           <a
@@ -143,6 +215,9 @@ export default function ListeningView({ session, identity, locked }: Props) {
           </a>
         )}
       </div>
+
+      {/* Listening Hints */}
+      <ListeningHints entry={activeEntry} />
 
       {/* Notes section */}
       <div
@@ -164,7 +239,7 @@ export default function ListeningView({ session, identity, locked }: Props) {
             Album notes
           </label>
           <textarea
-            className="w-full rounded-lg px-3 py-2.5 text-sm resize-y min-h-[100px] outline-none"
+            className="w-full rounded-lg px-3 py-2.5 text-sm resize-y min-h-[200px] outline-none"
             style={{
               background: 'var(--bg)',
               border: '1px solid var(--border)',
