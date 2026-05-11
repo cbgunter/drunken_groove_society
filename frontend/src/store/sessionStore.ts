@@ -133,6 +133,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         isLoading: false,
         isDirty: false,
       })
+      // Sync calendar summary so the grid reflects picks loaded from remote
+      cal.updateMonthSummary(month, {
+        status: session.locked ? 'done' : session.phase === 'listening' ? 'listening' : 'picking',
+        picks: session.entries.map((e) => ({ selector: e.selector, artist: e.artist, title: e.title })),
+        overallRatings: session.overallRatings,
+      })
     } catch {
       // 3. Not in DynamoDB yet — start a blank local session
       const session = blankSessionForMonth(month, roster)
