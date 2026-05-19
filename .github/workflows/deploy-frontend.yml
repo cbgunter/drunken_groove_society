@@ -1,0 +1,76 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Get stack outputs
+        id: stack
+        run: |
+          STACK="drunken-groove-society"
+          REGION="us-east-1"
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK" --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='FrontendBucketName'].OutputValue" \
+            --output text)
+          DIST_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK" --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text)
+          API_ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK" --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
+            --output text)
+          echo "bucket=$BUCKET" >> "$GITHUB_OUTPUT"
+          echo "dist_id=$DIST_ID" >> "$GITHUB_OUTPUT"
+          echo "api_endpoint=$API_ENDPOINT" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build:frontend
+        env:
+          VITE_API_BASE_URL: ${{ steps.stack.outputs.api_endpoint }}
+
+      - name: Sync versioned assets to S3
+        run: |
+          aws s3 sync frontend/dist s3://${{ steps.stack.outputs.bucket }} \
+            --delete \
+            --cache-control "max-age=31536000,immutable" \
+            --exclude "index.html" \
+            --region us-east-1
+
+      - name: Upload index.html (no-cache)
+        run: |
+          aws s3 cp frontend/dist/index.html \
+            s3://${{ steps.stack.outputs.bucket }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate" \
+            --region us-east-1
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.stack.outputs.dist_id }} \
+            --paths "/*" \
+            --region us-east-1

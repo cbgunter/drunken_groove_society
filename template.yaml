@@ -45,6 +45,7 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
+      Description: "Production stage"
       CorsConfiguration:
         AllowOrigins:
           - !If [HasCustomDomain, !Sub 'https://${CustomDomain}', !Sub 'https://${CloudFrontDistribution.DomainName}']
