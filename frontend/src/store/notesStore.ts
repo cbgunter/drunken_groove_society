@@ -15,6 +15,7 @@ interface NotesState {
   // All submitted notes fetched from API (all users)
   peerNotes: UserSessionNotes[]
   isFetchingPeers: boolean
+  peerFetchError: string | null
   isSubmitting: boolean
   submitError: string | null
 
@@ -38,6 +39,7 @@ export const useNotesStore = create<NotesState>()(
       submitted: {},
       peerNotes: [],
       isFetchingPeers: false,
+      peerFetchError: null,
       isSubmitting: false,
       submitError: null,
 
@@ -56,12 +58,12 @@ export const useNotesStore = create<NotesState>()(
       },
 
       fetchPeerNotes: async (sessionId) => {
-        set({ isFetchingPeers: true })
+        set({ isFetchingPeers: true, peerFetchError: null })
         try {
           const data = await api.getNotes(sessionId)
           set({ peerNotes: data.users, isFetchingPeers: false })
-        } catch {
-          set({ isFetchingPeers: false })
+        } catch (e) {
+          set({ isFetchingPeers: false, peerFetchError: (e as Error).message })
         }
       },
 

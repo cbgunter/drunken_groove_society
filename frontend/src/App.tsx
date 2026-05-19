@@ -78,7 +78,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const month = params.get('month')
-    if (month && /^\d{4}-\d{2}$/.test(month)) {
+    if (month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
       if (!roster) {
         // Need roster first before loading a month
         setView('roster-setup')

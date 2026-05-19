@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Session, UserSessionNotes } from '../../types'
+import type { NoteRevision, Session, UserSessionNotes } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useListeningStore } from '../../store/listeningStore'
 import { useCalendarStore } from '../../store/calendarStore'
@@ -11,6 +11,15 @@ interface Props {
   identity: { userId: string; userName: string }
   allNotes: UserSessionNotes[]
   onEndMeeting: (overallRatings: Record<string, number>) => void
+}
+
+// DynamoDB returns flat { albumNotes, trackNotes, rating }; local store wraps in { current: ... }
+function resolveNoteRevision(raw: unknown): NoteRevision | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as Record<string, unknown>
+  if ('current' in r && r.current && typeof r.current === 'object') return r.current as NoteRevision
+  if ('albumNotes' in r || 'rating' in r || 'trackNotes' in r) return r as unknown as NoteRevision
+  return null
 }
 
 function RatingBadge({ rating }: { rating: number }) {
@@ -33,8 +42,8 @@ function UserNoteColumn({
   notes: UserSessionNotes
   tracklist: string[]
 }) {
-  const entry = notes.entries[entryId]
-  if (!entry) {
+  const entryRevision = resolveNoteRevision(notes.entries[entryId])
+  if (!entryRevision) {
     return (
       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
         No notes from {userName}
@@ -44,14 +53,14 @@ function UserNoteColumn({
 
   return (
     <div className="space-y-2">
-      <RatingBadge rating={entry.current.rating} />
-      {entry.current.albumNotes && (
+      <RatingBadge rating={entryRevision.rating} />
+      {entryRevision.albumNotes && (
         <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-          {entry.current.albumNotes}
+          {entryRevision.albumNotes}
         </p>
       )}
       {tracklist.map((track) => {
-        const note = entry.current.trackNotes[track]
+        const note = entryRevision.trackNotes[track]
         if (!note) return null
         return (
           <div key={track}>

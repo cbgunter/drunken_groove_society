@@ -16,7 +16,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     return err('Invalid JSON', 400)
   }
 
-  if (!session.title && !session.date) return err('Invalid session', 400)
+  if (!session.title || !session.date) return err('Invalid session', 400)
 
   const now = Math.floor(Date.now() / 1000)
   const ttl = now + 90 * 24 * 60 * 60 // 90 days

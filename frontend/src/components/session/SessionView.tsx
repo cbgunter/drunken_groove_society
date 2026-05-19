@@ -26,7 +26,7 @@ function derivePhase(session: Session, userName: string): 'selection' | 'listeni
 export default function SessionView({ session, identity, month, onBack }: Props) {
   const { saveToRemote, isSaving, updateSession } = useSessionStore()
   const { updateMonthSummary } = useCalendarStore()
-  const { fetchPeerNotes, peerNotes } = useNotesStore()
+  const { fetchPeerNotes, peerFetchError } = useNotesStore()
 
   const [isSaved, setIsSaved] = useState(!session.locked ? false : true)
   const [meetingMode, setMeetingMode] = useState(false)
@@ -46,14 +46,12 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   async function handleSave() {
     await saveToRemote()
     setIsSaved(true)
-    syncCalendar({ status: 'picking' })
+    syncCalendar({ status: phase === 'listening' ? 'listening' : 'picking' })
   }
 
   async function handleStartMeeting() {
-    if (isSaved) {
-      await fetchPeerNotes(session.id)
-    }
-    setAllNotes(peerNotes)
+    await fetchPeerNotes(session.id)
+    setAllNotes(useNotesStore.getState().peerNotes)
     setMeetingMode(true)
   }
 
@@ -86,6 +84,11 @@ export default function SessionView({ session, identity, month, onBack }: Props)
             ← Back to listening
           </button>
         } />
+        {peerFetchError && (
+          <div className="text-xs px-3 py-2 rounded-lg" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
+            Could not load peer notes: {peerFetchError}. Showing local notes only.
+          </div>
+        )}
         <MeetingView
           session={session}
           identity={identity}
