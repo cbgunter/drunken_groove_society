@@ -46,6 +46,8 @@ Resources:
     Properties:
       StageName: prod
       Description: "Production stage"
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: false
       CorsConfiguration:
         AllowOrigins:
           - !If [HasCustomDomain, !Sub 'https://${CustomDomain}', !Sub 'https://${CloudFrontDistribution.DomainName}']
