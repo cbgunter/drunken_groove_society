@@ -19,6 +19,10 @@ npm run build:frontend # tsc + vite build
 npm run typecheck      # runs tsc -noEmit in both workspaces
 ```
 
+There are no tests and no linting configured. Type checking is the primary correctness gate.
+
+The Vite proxy expects a local backend on `:3001`. For local backend dev, run `sam local start-api --port 3001` (requires SAM CLI and Docker). Otherwise the frontend dev server calls the deployed API via `VITE_API_BASE_URL`.
+
 ### Deploy (GitHub Actions)
 
 Deploys are automatic on push to `main` via two path-filtered workflows:
@@ -45,6 +49,12 @@ bash scripts/deploy-frontend.sh
 
 **Stack:** React SPA (Vite + TypeScript + Tailwind + Zustand) → S3 + CloudFront → HTTP API Gateway v2 → Lambda (Node 20) → DynamoDB. Deployed via AWS SAM (`template.yaml`), stack name `drunken-groove-society`, region `us-east-1`, custom domain `dgs.caseyhunter.net`.
 
+### Frontend routing
+
+No react-router. `App.tsx` manages a `view` state (`'calendar' | 'month' | 'roster-setup' | 'roster-edit'`) that controls which top-level component renders. The active month is derived from a `?month=YYYY-MM` URL param for deep-linking.
+
+All API calls go through `frontend/src/api/client.ts`, which exports a single `api` object wrapping every endpoint.
+
 ### Frontend state model
 
 State lives in four Zustand stores, all persisted to `localStorage`:
@@ -64,20 +74,26 @@ A `Session` (`frontend/src/types/index.ts`) is keyed by month (`YYYY-MM`). It ha
 
 Identity is stored in `localStorage` as `dgs_user_name` and `dgs_user_id_<name>` (stable nanoid per name). Theme preference is `dgs_theme`.
 
+### Frontend styling
+
+Tailwind with dark mode via the `dark` class on `<html>`. Custom component utility classes are defined in `frontend/src/index.css`: `.surface`, `.btn-primary`, `.btn-ghost`, `.pill`. Custom `groove` color palette in `tailwind.config.ts`.
+
 ### Backend Lambda handlers
 
 All handlers are in `backend/src/handlers/`. Each exports a `handler` function for API Gateway HTTP v2. Helpers in `backend/src/lib/`:
 - `dynamo.ts` — DynamoDB Document Client, `TABLE` constant
 - `cors.ts` — `ok()` / `err()` response builders with CORS headers
 
+The two Claude API handlers use specific models: `lookup.ts` calls Claude Sonnet 4.6 with `tool_choice` to return structured album metadata; `generateSummary.ts` calls Claude Haiku 4.5 to produce a markdown meeting guide.
+
 **DynamoDB key scheme (single table `drunken-groove-society`):**
 
 | Entity | PK | SK |
 |---|---|---|
 | Session | `SESSION#<month>` | `METADATA` |
-| User notes | `NOTES#<sessionId>` | `USER#<userId>` |
+| User notes | `SESSION#<month>` | `NOTES#<userId>` |
 
-Sessions have a 90-day TTL. `entries` is stored as a JSON string inside the item.
+Sessions and their notes share the same PK (`SESSION#<month>`), so all data for a month lives in one partition. Sessions have a 90-day TTL. `entries` is stored as a JSON string inside the session item; user notes store an `entries` map keyed by `entryId`.
 
 ### API routes
 

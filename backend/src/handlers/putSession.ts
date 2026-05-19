@@ -19,7 +19,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   if (!session.title || !session.date) return err('Invalid session', 400)
 
   const now = Math.floor(Date.now() / 1000)
-  const ttl = now + 90 * 24 * 60 * 60 // 90 days
+  const ttl = now + 5 * 365 * 24 * 60 * 60 // 5 years
 
   await ddb.send(
     new PutCommand({

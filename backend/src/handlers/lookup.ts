@@ -20,6 +20,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
   const { artist, album } = body
   if (!artist || !album) return err('Missing artist or album', 400)
+  if (artist.length > 200 || album.length > 200) return err('Artist and album must be 200 characters or fewer', 400)
 
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
 

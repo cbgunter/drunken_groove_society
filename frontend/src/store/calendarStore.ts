@@ -69,11 +69,12 @@ export const useCalendarStore = create<CalendarState>()(
   ),
 )
 
-// Generate the 13-month range: Dec 2025 → Dec 2026
+// Dec 2025 is the fixed start (first session). End rolls to current month + 3.
 export function getCalendarMonths(): string[] {
   const months: string[] = []
-  const start = new Date(2025, 11, 1) // Dec 2025
-  const end = new Date(2026, 11, 1)   // Dec 2026
+  const start = new Date(2025, 11, 1)
+  const now = new Date()
+  const end = new Date(now.getFullYear(), now.getMonth() + 3, 1)
   const cur = new Date(start)
   while (cur <= end) {
     const y = cur.getFullYear()

@@ -31,11 +31,16 @@ Parameters:
     Type: String
     Default: ''
     Description: Custom domain name (e.g. dgs.caseyhunter.net). Leave empty to use CloudFront default domain.
+  BillingAlertEmail:
+    Type: String
+    Default: ''
+    Description: Email address to receive billing alerts when estimated charges exceed $5. Leave empty to skip.
 
 Conditions:
   HasCustomDomain: !And
     - !Not [!Equals [!Ref CertificateArn, '']]
     - !Not [!Equals [!Ref CustomDomain, '']]
+  HasBillingAlert: !Not [!Equals [!Ref BillingAlertEmail, '']]
 
 Resources:
 
@@ -48,6 +53,8 @@ Resources:
       Description: "Production stage"
       DefaultRouteSettings:
         DetailedMetricsEnabled: false
+        ThrottlingRateLimit: 10
+        ThrottlingBurstLimit: 20
       CorsConfiguration:
         AllowOrigins:
           - !If [HasCustomDomain, !Sub 'https://${CustomDomain}', !Sub 'https://${CloudFrontDistribution.DomainName}']
@@ -157,6 +164,35 @@ Resources:
             ApiId: !Ref Api
             Path: /summary
             Method: POST
+
+  # ── Billing alarm (optional) ───────────────────────────────────────────────
+
+  BillingAlertTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasBillingAlert
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref BillingAlertEmail
+
+  BillingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBillingAlert
+    Properties:
+      AlarmDescription: DGS estimated AWS charges exceed $5
+      Namespace: AWS/Billing
+      MetricName: EstimatedCharges
+      Dimensions:
+        - Name: Currency
+          Value: USD
+      Statistic: Maximum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref BillingAlertTopic
+      TreatMissingData: notBreaching
 
   # ── DynamoDB ───────────────────────────────────────────────────────────────
 

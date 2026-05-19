@@ -28,7 +28,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   const pk = `SESSION#${sessionId}`
   const sk = `NOTES#${userId}`
   const now = new Date().toISOString()
-  const ttl = Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60
+  const ttl = Math.floor(Date.now() / 1000) + 5 * 365 * 24 * 60 * 60 // 5 years
 
   // Read existing item to merge (non-destructive to other entries)
   const existing = await ddb.send(new GetCommand({ TableName: TABLE, Key: { PK: pk, SK: sk } }))
