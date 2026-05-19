@@ -63,7 +63,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
             tracklist: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Complete ordered track listing',
+              description: 'Complete ordered track listing. Return plain track names only — no track numbers, no numbering prefixes.',
             },
             spotify_url: {
               type: 'string',
@@ -110,7 +110,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     year:          data.year ?? 0,
     format:        data.format ?? 'LP',
     fun_facts:     data.fun_facts ?? [],
-    tracklist:     data.tracklist ?? [],
+    tracklist:     (data.tracklist ?? []).map((t: string) => t.replace(/^\d+\.\s*/, '').trim()),
     external_link,
   })
 }

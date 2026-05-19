@@ -135,7 +135,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY })
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2048,
     system:
       'You are a music journalist writing a structured meeting guide for a small listening club. Write in markdown. Be warm, specific, and opinionated. Reference listener notes directly when possible. Never pad with generic filler.',
