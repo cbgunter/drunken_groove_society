@@ -1,3 +1,5 @@
+version = 0.1
+
 [default.deploy.parameters]
 stack_name          = "drunken-groove-society"
 s3_bucket           = "aws-sam-cli-managed-default-samclisourcebucket-yhl0vje1awdi"
