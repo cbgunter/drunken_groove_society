@@ -49,4 +49,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  sendSummary: (payload: { summary: string; sessionMonth: string }) =>
+    request<{ sent: boolean }>('/send-summary', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 }

@@ -57,14 +57,15 @@ export default function MonthCell({ month, summary, isCurrent, onClick }: Props)
           {isCurrent && (
             <span
               className="text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0"
-              style={{ background: 'var(--accent)', color: '#fff' }}
+              style={{ background: isDone ? '#059669' : 'var(--accent)', color: '#fff' }}
             >
-              Now
+              {isDone ? '✓ Done' : 'Now'}
             </span>
           )}
         </div>
-        {isDone && avgRating !== null && <RatingDots rating={avgRating} />}
-        {!isDone && (
+        {isDone && avgRating !== null && avgRating > 0 ? (
+          <RatingDots rating={avgRating} />
+        ) : (
           <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
             {cfg.label}
           </span>

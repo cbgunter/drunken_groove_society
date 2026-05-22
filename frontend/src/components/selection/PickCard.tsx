@@ -9,6 +9,121 @@ interface Props {
   isSaving: boolean
 }
 
+async function fetchMusicBrainzTracklist(artist: string, album: string): Promise<string[]> {
+  try {
+    const query = `artist:"${artist}" AND release:"${album}"`
+    const searchRes = await fetch(
+      `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(query)}&limit=3&fmt=json`,
+    )
+    if (!searchRes.ok) return []
+    const searchData = await searchRes.json()
+    const releases: Array<{ id: string }> = searchData.releases ?? []
+    if (!releases.length) return []
+
+    const releaseRes = await fetch(
+      `https://musicbrainz.org/ws/2/release/${releases[0].id}?inc=recordings&fmt=json`,
+    )
+    if (!releaseRes.ok) return []
+    const releaseData = await releaseRes.json()
+
+    const tracks: string[] = []
+    for (const medium of releaseData.media ?? []) {
+      for (const track of medium.tracks ?? []) {
+        const name: string = track.title || track.recording?.title || ''
+        if (name) tracks.push(name)
+      }
+    }
+    return tracks
+  } catch {
+    return []
+  }
+}
+
+function TracklistEditor({
+  tracks,
+  onChange,
+}: {
+  tracks: string[]
+  onChange: (t: string[]) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<string[]>([])
+
+  if (!tracks.length) return null
+
+  if (editing) {
+    return (
+      <div className="space-y-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          Edit tracklist
+        </p>
+        <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+          {draft.map((track, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span
+                className="text-[10px] w-5 text-right flex-shrink-0"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {i + 1}.
+              </span>
+              <input
+                value={track}
+                onChange={(e) => {
+                  const next = [...draft]
+                  next[i] = e.target.value
+                  setDraft(next)
+                }}
+                className="flex-1 rounded px-2 py-0.5 text-xs outline-none"
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            className="btn-primary text-[10px] px-2 py-0.5"
+            onClick={() => {
+              onChange(draft.filter((t) => t.trim()))
+              setEditing(false)
+            }}
+          >
+            ✓ Confirm
+          </button>
+          <button
+            className="btn-ghost text-[10px] px-2 py-0.5"
+            onClick={() => setEditing(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        {tracks.length} tracks · {tracks.slice(0, 3).join(', ')}
+        {tracks.length > 3 ? '…' : ''}
+      </p>
+      <button
+        className="text-[10px] flex-shrink-0 underline"
+        style={{ color: 'var(--accent)' }}
+        onClick={() => {
+          setDraft([...tracks])
+          setEditing(true)
+        }}
+      >
+        ✎ Edit
+      </button>
+    </div>
+  )
+}
+
 export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
   const [artist, setArtist] = useState(entry.artist)
   const [album, setAlbum] = useState(entry.title)
@@ -26,27 +141,28 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
     if (!artist.trim() || !album.trim()) return
     setIsLooking(true)
     setLookupError('')
-    // Commit the typed values first
     onChange({ artist: artist.trim(), title: album.trim() })
     try {
-      const result: LookupResult = await api.lookupAlbum({ artist: artist.trim(), album: album.trim() })
+      const [result, mbTracks]: [LookupResult, string[]] = await Promise.all([
+        api.lookupAlbum({ artist: artist.trim(), album: album.trim() }),
+        fetchMusicBrainzTracklist(artist.trim(), album.trim()),
+      ])
       onChange({
         artist: artist.trim(),
         title: album.trim(),
-        about_band:   result.about_band,
-        about_album:  result.about_album,
-        genre_tags:   result.genre_tags,
-        year:         result.year,
-        format:       result.format,
-        fun_facts:    result.fun_facts,
-        tracklist:    result.tracklist,
+        about_band: result.about_band,
+        about_album: result.about_album,
+        genre_tags: result.genre_tags,
+        year: result.year,
+        format: result.format,
+        fun_facts: result.fun_facts,
+        tracklist: mbTracks.length > 0 ? mbTracks : result.tracklist,
         external_link: result.external_link,
-        badge_emoji:  entry.badge_emoji,
+        badge_emoji: entry.badge_emoji,
       })
       setLooked(true)
     } catch (e) {
       setLookupError((e as Error).message)
-      // Still save the artist/title so the pick isn't lost
       onChange({ artist: artist.trim(), title: album.trim() })
     } finally {
       setIsLooking(false)
@@ -112,11 +228,12 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
           )}
         </div>
       )}
-      {looked && entry.tracklist.length > 0 && (
-        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-          {entry.tracklist.length} tracks · {entry.tracklist.slice(0, 3).join(', ')}
-          {entry.tracklist.length > 3 ? '…' : ''}
-        </p>
+
+      {looked && (
+        <TracklistEditor
+          tracks={entry.tracklist}
+          onChange={(tracks) => onChange({ tracklist: tracks })}
+        />
       )}
 
       {lookupError && (

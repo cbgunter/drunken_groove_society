@@ -47,71 +47,57 @@ function resolveEntryNotes(raw: EntryNotes | { current?: EntryNotes }): EntryNot
 
 function buildPrompt(session: Session, allNotes: UserSessionNotes[]): string {
   const entryBlocks = session.entries.map((entry) => {
-    const selectorLine = entry.selector ? `**Selected by:** ${entry.selector}` : ''
-
     const noteBlocks = allNotes
       .map((user) => {
         const raw = user.entries[entry.id]
         if (!raw) return null
         const notes = resolveEntryNotes(raw)
         const parts: string[] = []
-        if (notes.rating) parts.push(`Rating: ${'🎵'.repeat(notes.rating)} ${notes.rating}/5`)
+        if (notes.rating) parts.push(`Rating: ${notes.rating}/5`)
         if (notes.albumNotes?.trim()) parts.push(notes.albumNotes.trim())
         if (notes.trackNotes) {
           for (const [track, note] of Object.entries(notes.trackNotes)) {
-            if (note?.trim()) parts.push(`  **${track}:** ${note.trim()}`)
+            if (note?.trim()) parts.push(`  [${track}]: ${note.trim()}`)
           }
         }
         if (!parts.length) return null
-        return `**${user.userName || user.userId}:**\n${parts.join('\n')}`
+        return `${user.userName || user.userId}:\n${parts.join('\n')}`
       })
       .filter(Boolean)
-      .join('\n\n') || '_No notes submitted for this entry._'
+      .join('\n\n') || '_No notes submitted._'
 
     return [
-      `### ${entry.badge_emoji} ${entry.artist} — ${entry.title} (${entry.year}) [${entry.format}]`,
-      selectorLine,
-      entry.genre_tags.length ? `Tags: ${entry.genre_tags.join(', ')}` : '',
-      entry.about_band ? `**About the band:** ${entry.about_band}` : '',
-      entry.about_album ? `**About the album:** ${entry.about_album}` : '',
-      entry.fun_facts.length
-        ? `**Fun facts:**\n${entry.fun_facts.map((f) => `- ${f}`).join('\n')}`
-        : '',
-      entry.tracklist.length ? `**Tracklist:** ${entry.tracklist.join(', ')}` : '',
-      `**Listener notes:**\n${noteBlocks}`,
+      `### ${entry.badge_emoji} ${entry.artist} — ${entry.title}${entry.selector ? ` (${entry.selector}'s pick)` : ''}${entry.year ? ` [${entry.year}]` : ''}`,
+      entry.genre_tags.length ? `Genre: ${entry.genre_tags.join(', ')}` : '',
+      `Notes:\n${noteBlocks}`,
     ]
       .filter(Boolean)
-      .join('\n\n')
+      .join('\n')
   })
 
   return [
-    `# ${session.title} — ${session.date}`,
+    'Listener notes for a small music club meeting:',
     '',
     ...entryBlocks,
     '',
     '---',
     '',
-    `Generate a structured meeting guide in markdown for these ${session.entries.length} albums. Structure your response exactly as follows:`,
+    'Write a concise meeting guide in markdown. Use only information from these notes.',
     '',
-    '## Overall Summary',
-    '2-3 paragraphs covering the session as a whole: common threads, contrasts, standout moments from the notes.',
+    '## Common threads',
+    'One short paragraph: shared reactions, moods, or themes that cut across albums or listeners.',
     '',
-    'Then for each album, a section with this exact structure:',
+    '## Points of contention',
+    'One short paragraph: where listeners disagreed — different ratings, conflicting reactions to the same track or album.',
     '',
-    "## [badge] [Artist] — [Title] ([selector]'s pick)",
+    `For each of the ${session.entries.length} albums, one section:`,
+    "## [emoji] [Artist] — [Title] ([selector]'s pick)",
+    '- 3–4 specific talking points drawn directly from the listener notes',
     '',
-    '### Talking points',
-    '4-6 specific bullet points to discuss during the meeting, drawn from the album context and listener notes.',
+    '## Questions for the table',
+    '3–4 pointed questions tailored to these albums and notes.',
     '',
-    '### Note highlights',
-    'For each person who submitted notes, pull out 1-2 of their most interesting or specific observations (quote them directly when possible). Skip people with no notes.',
-    '',
-    'After all album sections:',
-    '',
-    '## Discussion questions',
-    '5-7 open-ended questions to spark conversation across the whole group during the meeting. Make them specific to these albums and notes — not generic.',
-    '',
-    'Be warm, specific, and enthusiastic. Reference the listener notes directly.',
+    'Be direct and specific. Under 600 words. No filler.',
   ].join('\n')
 }
 
@@ -136,7 +122,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2048,
+    max_tokens: 1200,
     system:
       'You are a music journalist writing a structured meeting guide for a small listening club. Write in markdown. Be warm, specific, and opinionated. Reference listener notes directly when possible. Never pad with generic filler.',
     messages: [{ role: 'user', content: buildPrompt(session, allNotes ?? []) }],

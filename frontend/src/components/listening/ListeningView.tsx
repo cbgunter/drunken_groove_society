@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { Session, Entry } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useListeningStore } from '../../store/listeningStore'
@@ -73,6 +73,54 @@ function TrackPillNotes({
             onChange={(e) => !readOnly && onChange(activeTrack, e.target.value)}
           />
         </div>
+      )}
+    </div>
+  )
+}
+
+function SamplePlayer({ url }: { url: string }) {
+  const [open, setOpen] = useState(false)
+
+  function getEmbedUrl(rawUrl: string): string | null {
+    if (rawUrl.includes('open.spotify.com/')) {
+      try {
+        const path = new URL(rawUrl).pathname
+        return `https://open.spotify.com/embed${path}`
+      } catch {
+        return null
+      }
+    }
+    const ytMatch = rawUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+)/)
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
+    return null
+  }
+
+  const embedUrl = getEmbedUrl(url)
+  if (!embedUrl) return null
+
+  const isSpotify = url.includes('spotify.com')
+
+  return (
+    <div className="space-y-1.5">
+      <button
+        className="text-xs flex items-center gap-1"
+        style={{ color: 'var(--accent)' }}
+        onClick={() => setOpen(!open)}
+      >
+        {open ? '▾ Hide player' : '▸ Play sample'}
+      </button>
+      {open && (
+        <iframe
+          src={embedUrl}
+          width="100%"
+          height={isSpotify ? 152 : 200}
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+          title="Music player"
+          style={{ borderRadius: '8px', display: 'block' }}
+        />
       )}
     </div>
   )
@@ -204,15 +252,18 @@ export default function ListeningView({ session, identity, locked }: Props) {
         <EntryMeta entry={activeEntry} />
 
         {activeEntry.external_link && (
-          <a
-            href={activeEntry.external_link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm"
-            style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
-          >
-            ▶ {activeEntry.external_link.label}
-          </a>
+          <div className="space-y-2">
+            <a
+              href={activeEntry.external_link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm"
+              style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent)' }}
+            >
+              ▶ {activeEntry.external_link.label}
+            </a>
+            <SamplePlayer url={activeEntry.external_link.url} />
+          </div>
         )}
       </div>
 

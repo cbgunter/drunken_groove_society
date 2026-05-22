@@ -35,6 +35,14 @@ Parameters:
     Type: String
     Default: ''
     Description: Email address to receive billing alerts when estimated charges exceed $5. Leave empty to skip.
+  FromEmail:
+    Type: String
+    Default: ''
+    Description: SES sender email for meeting summaries. Must be verified in SES. Leave empty to disable.
+  CrewEmails:
+    Type: String
+    Default: ''
+    Description: Comma-separated recipient emails for meeting summaries.
 
 Conditions:
   HasCustomDomain: !And
@@ -164,6 +172,30 @@ Resources:
             ApiId: !Ref Api
             Path: /summary
             Method: POST
+
+  SendSummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: dist/handlers/sendSummary.handler
+      Environment:
+        Variables:
+          FROM_EMAIL: !Ref FromEmail
+          CREW_EMAILS: !Ref CrewEmails
+      Events:
+        Post:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref Api
+            Path: /send-summary
+            Method: POST
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: '*'
 
   # ── Billing alarm (optional) ───────────────────────────────────────────────
 
