@@ -35,18 +35,20 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   const phase = derivePhase(session, identity.userName)
   const { long } = formatMonthLabel(month)
 
-  function syncCalendar(overrides?: { status?: 'picking' | 'listening' | 'done' }) {
-    updateMonthSummary(month, {
-      status: overrides?.status ?? (phase === 'done' ? 'done' : 'picking'),
-      picks: session.entries.map((e) => ({ selector: e.selector, artist: e.artist, title: e.title })),
-      overallRatings: session.overallRatings,
-    })
-  }
-
   async function handleSave() {
     await saveToRemote()
     setIsSaved(true)
-    syncCalendar({ status: phase === 'listening' ? 'listening' : 'picking' })
+    // Read live store state to avoid stale closure — session may have been updated
+    // since the last render (e.g., lookup completed after the component re-rendered)
+    const live = useSessionStore.getState().session
+    if (live) {
+      const hasAnyPick = live.entries.some((e) => e.artist.trim())
+      updateMonthSummary(month, {
+        status: live.locked ? 'done' : hasAnyPick ? 'listening' : 'picking',
+        picks: live.entries.map((e) => ({ selector: e.selector, artist: e.artist, title: e.title })),
+        overallRatings: live.overallRatings,
+      })
+    }
   }
 
   async function handleStartMeeting() {

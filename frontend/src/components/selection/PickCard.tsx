@@ -161,6 +161,12 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
         badge_emoji: entry.badge_emoji,
       })
       setLooked(true)
+      // Auto-save to DynamoDB after successful lookup so calendar updates immediately
+      try {
+        await onSave()
+      } catch {
+        // Silent — user can retry via "Save changes" in listening view
+      }
     } catch (e) {
       setLookupError((e as Error).message)
       onChange({ artist: artist.trim(), title: album.trim() })
