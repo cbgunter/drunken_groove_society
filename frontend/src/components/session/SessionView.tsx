@@ -31,6 +31,7 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   const [isSaved, setIsSaved] = useState(!session.locked ? false : true)
   const [meetingMode, setMeetingMode] = useState(false)
   const [allNotes, setAllNotes] = useState<UserSessionNotes[]>([])
+  const [isEditingPick, setIsEditingPick] = useState(false)
 
   const phase = derivePhase(session, identity.userName)
   const { long } = formatMonthLabel(month)
@@ -101,12 +102,27 @@ export default function SessionView({ session, identity, month, onBack }: Props)
     )
   }
 
-  // ── Selection phase ─────────────────────────────────────────────────────
-  if (phase === 'selection') {
+  // ── Selection phase (or editing an existing pick) ──────────────────────
+  if (phase === 'selection' || isEditingPick) {
     return (
       <div className="space-y-4">
-        <BackBar onBack={onBack} label={long} />
-        <SelectionView session={session} userName={identity.userName} onSave={handleSave} isSaving={isSaving} />
+        <BackBar
+          onBack={onBack}
+          label={long}
+          extra={
+            isEditingPick ? (
+              <button className="btn-ghost text-xs" onClick={() => setIsEditingPick(false)}>
+                ← Cancel
+              </button>
+            ) : undefined
+          }
+        />
+        <SelectionView
+          session={session}
+          userName={identity.userName}
+          onSave={async () => { await handleSave(); setIsEditingPick(false) }}
+          isSaving={isSaving}
+        />
       </div>
     )
   }
@@ -115,9 +131,14 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   return (
     <div className="space-y-4">
       <BackBar onBack={onBack} label={long} extra={
-        <button className="btn-primary text-xs" onClick={handleStartMeeting}>
-          🎙️ Start meeting
-        </button>
+        <div className="flex gap-2">
+          <button className="btn-ghost text-xs" onClick={() => setIsEditingPick(true)}>
+            ✎ Edit pick
+          </button>
+          <button className="btn-primary text-xs" onClick={handleStartMeeting}>
+            🎙️ Start meeting
+          </button>
+        </div>
       } />
       {!isSaved && (
         <div className="flex justify-end">
