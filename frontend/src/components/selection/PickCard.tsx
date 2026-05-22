@@ -5,7 +5,7 @@ import { api } from '../../api/client'
 interface Props {
   entry: Entry
   onChange: (updates: Partial<Entry>) => void
-  onSave: () => void
+  onSave: () => Promise<void> | void
   isSaving: boolean
 }
 
@@ -125,11 +125,23 @@ function TracklistEditor({
 }
 
 export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
-  const [artist, setArtist] = useState(entry.artist)
-  const [album, setAlbum] = useState(entry.title)
+  const [artist, setArtist] = useState(entry.artist || '')
+  const [album, setAlbum] = useState(entry.title || '')
   const [isLooking, setIsLooking] = useState(false)
   const [lookupError, setLookupError] = useState('')
-  const [looked, setLooked] = useState(entry.tracklist.length > 0)
+  const [looked, setLooked] = useState(entry.tracklist.length > 0 || entry.genre_tags.length > 0)
+
+  // Lookup result held in local state until the user confirms — calling onChange()
+  // immediately would update the Zustand session, trigger derivePhase → 'listening',
+  // and switch the view to ListeningView before the user can confirm the pick.
+  const [pending, setPending] = useState<Partial<Entry> | null>(
+    entry.tracklist.length > 0 || entry.genre_tags.length > 0 ? entry : null,
+  )
+
+  const displayTracks = pending?.tracklist ?? entry.tracklist
+  const displayGenreTags = pending?.genre_tags ?? entry.genre_tags
+  const displayYear = pending?.year ?? entry.year
+  const displayFormat = pending?.format ?? entry.format
 
   const inputStyle = {
     background: 'var(--bg)',
@@ -141,13 +153,13 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
     if (!artist.trim() || !album.trim()) return
     setIsLooking(true)
     setLookupError('')
-    onChange({ artist: artist.trim(), title: album.trim() })
     try {
       const [result, mbTracks]: [LookupResult, string[]] = await Promise.all([
         api.lookupAlbum({ artist: artist.trim(), album: album.trim() }),
         fetchMusicBrainzTracklist(artist.trim(), album.trim()),
       ])
-      onChange({
+      // Hold in local state — do NOT call onChange yet (would trigger phase change)
+      setPending({
         artist: artist.trim(),
         title: album.trim(),
         about_band: result.about_band,
@@ -161,18 +173,19 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
         badge_emoji: entry.badge_emoji,
       })
       setLooked(true)
-      // Auto-save to DynamoDB after successful lookup so calendar updates immediately
-      try {
-        await onSave()
-      } catch {
-        // Silent — user can retry via "Save changes" in listening view
-      }
     } catch (e) {
       setLookupError((e as Error).message)
-      onChange({ artist: artist.trim(), title: album.trim() })
     } finally {
       setIsLooking(false)
     }
+  }
+
+  async function handleConfirm() {
+    // Commit the pending result to the parent Zustand store.
+    // Zustand's set() is synchronous, so saveToRemote's get() sees the update immediately.
+    const updates = pending ?? { artist: artist.trim(), title: album.trim() }
+    onChange(updates)
+    await onSave()
   }
 
   return (
@@ -221,50 +234,51 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
       </div>
 
       {/* Lookup result preview */}
-      {looked && entry.genre_tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {entry.genre_tags.map((t) => (
-            <span key={t} className="pill text-[10px]">{t}</span>
-          ))}
-          {entry.year > 0 && (
-            <span className="pill text-[10px]">{entry.year}</span>
-          )}
-          {entry.format !== 'Other' && (
-            <span className="pill text-[10px]">{entry.format}</span>
-          )}
-        </div>
-      )}
-
       {looked && (
-        <TracklistEditor
-          tracks={entry.tracklist}
-          onChange={(tracks) => onChange({ tracklist: tracks })}
-        />
+        <>
+          {displayGenreTags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {displayGenreTags.map((t) => (
+                <span key={t} className="pill text-[10px]">{t}</span>
+              ))}
+              {displayYear > 0 && (
+                <span className="pill text-[10px]">{displayYear}</span>
+              )}
+              {displayFormat !== 'Other' && (
+                <span className="pill text-[10px]">{displayFormat}</span>
+              )}
+            </div>
+          )}
+          <TracklistEditor
+            tracks={displayTracks}
+            onChange={(tracks) => setPending((prev) => ({ ...(prev ?? {}), tracklist: tracks }))}
+          />
+        </>
       )}
 
       {lookupError && (
         <p className="text-xs" style={{ color: '#dc2626' }}>
           {lookupError.includes('503') || lookupError.includes('configured')
-            ? 'Lookup requires the backend to be deployed. Artist & album saved manually.'
+            ? 'Lookup requires the backend to be deployed. You can still save manually.'
             : `Lookup failed: ${lookupError}`}
         </p>
       )}
 
-      {/* Lookup + Save buttons */}
+      {/* Action buttons */}
       <div className="flex gap-2">
         <button
-          className="btn-primary text-xs flex-1 justify-center"
+          className="btn-ghost text-xs flex-1 justify-center"
           onClick={handleLookup}
           disabled={isLooking || !artist.trim() || !album.trim()}
         >
           {isLooking ? '🔍 Looking up…' : looked ? '↻ Re-lookup' : '🔍 Look up'}
         </button>
         <button
-          className="btn-ghost text-xs flex-1 justify-center"
-          onClick={onSave}
-          disabled={isSaving || !artist.trim() || !album.trim()}
+          className="btn-primary text-xs flex-1 justify-center"
+          onClick={handleConfirm}
+          disabled={isSaving || (!artist.trim() && !album.trim())}
         >
-          {isSaving ? 'Saving…' : '💾 Save'}
+          {isSaving ? 'Saving…' : looked ? '✓ Confirm pick' : '💾 Save'}
         </button>
       </div>
     </div>
