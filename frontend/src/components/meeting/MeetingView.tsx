@@ -60,7 +60,7 @@ function UserNoteColumn({
         </p>
       )}
       {tracklist.map((track) => {
-        const note = entryRevision.trackNotes[track]
+        const note = entryRevision.trackNotes?.[track]
         if (!note) return null
         return (
           <div key={track}>
@@ -117,7 +117,7 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
     const overallRatings: Record<string, number> = {}
     for (const entry of session.entries) {
       const ratings = allMerged
-        .map((u) => u.entries[entry.id]?.current.rating ?? 0)
+        .map((u) => resolveNoteRevision(u.entries[entry.id])?.rating ?? 0)
         .filter((r) => r > 0)
       overallRatings[entry.id] = ratings.length
         ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
@@ -178,7 +178,7 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
       {session.entries.map((entry) => {
         const avgRating = (() => {
           const ratings = allMerged
-            .map((u) => u.entries[entry.id]?.current.rating ?? 0)
+            .map((u) => resolveNoteRevision(u.entries[entry.id])?.rating ?? 0)
             .filter((r) => r > 0)
           return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0
         })()
