@@ -43,8 +43,8 @@ export default function MonthCell({ month, summary, isCurrent, onClick }: Props)
       className="w-full text-left rounded-xl p-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
       style={{
         background: 'var(--bg-surface)',
-        border: `1.5px solid ${isCurrent ? 'var(--accent)' : cfg.borderColor}`,
-        boxShadow: isCurrent ? '0 0 0 2px var(--accent-light)' : undefined,
+        border: `1.5px solid ${isCurrent && !isDone ? 'var(--accent)' : cfg.borderColor}`,
+        boxShadow: isCurrent && !isDone ? '0 0 0 2px var(--accent-light)' : undefined,
       }}
       onClick={onClick}
       title={long}
