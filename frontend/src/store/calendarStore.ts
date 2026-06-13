@@ -92,7 +92,7 @@ export function formatMonthLabel(month: string): { short: string; long: string }
   const [year, mon] = month.split('-')
   const date = new Date(Number(year), Number(mon) - 1, 1)
   return {
-    short: date.toLocaleString('default', { month: 'short' }),
+    short: date.toLocaleString('default', { month: 'long' }),
     long: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
   }
 }
