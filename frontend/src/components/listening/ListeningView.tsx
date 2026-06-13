@@ -205,7 +205,7 @@ function ListeningHints({ entry }: { entry: Entry }) {
 
 export default function ListeningView({ session, identity, locked }: Props) {
   const { activeEntryId, setActiveEntry } = useSessionStore()
-  const { getDraft, setDraft, setRating, getRating, getHistory, saveDraft, isSaving } =
+  const { getDraft, setDraft, setRating, getRating, getHistory, saveDraft, isSaving, saveError } =
     useListeningStore()
 
   const activeEntry = session.entries.find((e) => e.id === activeEntryId) ?? session.entries[0]
@@ -319,13 +319,18 @@ export default function ListeningView({ session, identity, locked }: Props) {
         {!locked && (
           <div className="flex items-center justify-between pt-1 gap-3 flex-wrap">
             <NoteHistory history={history} />
-            <button
-              className="btn-primary text-sm"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving…' : 'Save notes'}
-            </button>
+            <div className="flex items-center gap-2">
+              {saveError && (
+                <span className="text-xs" style={{ color: '#b91c1c' }}>Save failed</span>
+              )}
+              <button
+                className="btn-primary text-sm"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving…' : saveError ? 'Retry' : 'Save notes'}
+              </button>
+            </div>
           </div>
         )}
         {locked && history.length > 0 && <NoteHistory history={history} />}

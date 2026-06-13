@@ -4,19 +4,6 @@ Improvements identified but deferred. Ordered roughly by priority.
 
 ---
 
-## High priority
-
-### Save failure states
-All three save paths fail silently with no retry UI:
-- `sessionStore.saveToRemote()` — sets an error flag but the UI has no retry button
-- `listeningStore.saveDraft()` — shows "Saving…" spinner but no failure state or timeout
-- `SessionView` → `fetchPeerNotes()` — failure is swallowed; user enters meeting mode with stale/incomplete data
-
-Each needs a visible error state and a retry affordance.
-
-### entries stored as JSON string in DynamoDB
-`putSession.ts` does `JSON.stringify(session.entries)` before writing. Entries are an opaque blob — DynamoDB expressions can't touch individual fields. Migrate to a native DynamoDB map/list so individual entries can be updated without rewriting the whole session. Requires a one-time data migration and coordinated frontend/backend change.
-
 ---
 
 ## Medium priority

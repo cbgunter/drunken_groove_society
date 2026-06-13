@@ -21,42 +21,31 @@ export default function CalendarView({ onSelectMonth }: Props) {
 
   return (
     <div>
-      {/* Hero */}
-      <div className="flex items-center gap-4 mb-6">
-        <img
-          src="/logo-grid.jpg"
-          alt="The Drunken Groove Society"
-          className="w-20 h-20 object-contain rounded-xl flex-shrink-0"
-          style={{ background: '#fff' }}
-        />
+      {/* Header row: title + legend */}
+      <div className="flex items-center justify-between mb-5 gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold">Sessions</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <h1 className="text-lg font-bold leading-tight">Sessions</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             Rolling 12 months · One pick per person per month
           </p>
         </div>
+        <div className="flex items-center gap-5 text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          {[
+            { dot: 'var(--text-muted)',  label: 'No picks' },
+            { dot: 'var(--accent)',      label: 'Picks in' },
+            { dot: '#A0622A',            label: 'Listening' },
+            { dot: '#2A6B4A',            label: 'Complete' },
+          ].map(({ dot, label }) => (
+            <span key={label} className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dot }} />
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* Status legend */}
-      <div className="flex flex-wrap gap-5 mb-6 text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        {[
-          { dot: 'var(--text-muted)',  label: 'No picks' },
-          { dot: 'var(--accent)',      label: 'Picks in' },
-          { dot: '#A0622A',            label: 'Listening' },
-          { dot: '#2A6B4A',            label: 'Complete' },
-        ].map(({ dot, label }) => (
-          <span key={label} className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dot }} />
-            {label}
-          </span>
-        ))}
-      </div>
-
-      {/* Flat grid — no year grouping; year shown inside each card */}
-      <div
-        className="grid gap-3"
-        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))' }}
-      >
+      {/* Fixed 4-column grid → clean 4×3 for 12 months */}
+      <div className="grid grid-cols-4 gap-3 items-stretch">
         {months.map((month) => {
           const summary = effectiveSummary(month, getMonthSummary(month))
           return (

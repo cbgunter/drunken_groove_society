@@ -24,9 +24,9 @@ function derivePhase(session: Session, userName: string): 'selection' | 'listeni
 }
 
 export default function SessionView({ session, identity, month, onBack }: Props) {
-  const { saveToRemote, isSaving, updateSession } = useSessionStore()
+  const { saveToRemote, isSaving, error: saveError } = useSessionStore()
   const { updateMonthSummary } = useCalendarStore()
-  const { fetchPeerNotes, peerFetchError } = useNotesStore()
+  const { fetchPeerNotes, peerFetchError, isFetchingPeers } = useNotesStore()
 
   const [isSaved, setIsSaved] = useState(!session.locked ? false : true)
   const [meetingMode, setMeetingMode] = useState(false)
@@ -62,6 +62,11 @@ export default function SessionView({ session, identity, month, onBack }: Props)
     setMeetingMode(false)
   }
 
+  async function handleRetryNotes() {
+    await fetchPeerNotes(session.id)
+    setAllNotes(useNotesStore.getState().peerNotes)
+  }
+
   // ── Locked / done view ──────────────────────────────────────────────────
   if (phase === 'done' && !meetingMode) {
     return (
@@ -88,8 +93,15 @@ export default function SessionView({ session, identity, month, onBack }: Props)
           </button>
         } />
         {peerFetchError && (
-          <div className="text-xs px-3 py-2 rounded-lg" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
-            Could not load peer notes: {peerFetchError}. Showing local notes only.
+          <div className="text-xs px-3 py-2 rounded-lg flex items-center justify-between gap-3" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
+            <span>Could not load peer notes. Showing local notes only.</span>
+            <button
+              className="btn-ghost text-xs flex-shrink-0"
+              onClick={handleRetryNotes}
+              disabled={isFetchingPeers}
+            >
+              {isFetchingPeers ? 'Loading…' : 'Retry'}
+            </button>
           </div>
         )}
         <MeetingView
@@ -117,6 +129,11 @@ export default function SessionView({ session, identity, month, onBack }: Props)
             ) : undefined
           }
         />
+        {saveError && (
+          <div className="text-xs px-3 py-2 rounded-lg" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' }}>
+            Save failed — check your connection and try again.
+          </div>
+        )}
         <SelectionView
           session={session}
           userName={identity.userName}
@@ -141,9 +158,12 @@ export default function SessionView({ session, identity, month, onBack }: Props)
         </div>
       } />
       {!isSaved && (
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center gap-2">
+          {saveError && (
+            <span className="text-xs" style={{ color: '#b91c1c' }}>Save failed</span>
+          )}
           <button className="btn-ghost text-xs" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving…' : 'Save changes'}
+            {isSaving ? 'Saving…' : saveError ? 'Retry' : 'Save changes'}
           </button>
         </div>
       )}

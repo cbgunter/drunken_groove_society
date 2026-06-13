@@ -29,7 +29,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         SK: 'METADATA',
         ...session,
         id,
-        entries: JSON.stringify(session.entries ?? []),
+        entries: session.entries ?? [],
         updatedAt: new Date().toISOString(),
         ttl,
       },
