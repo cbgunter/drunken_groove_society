@@ -3,6 +3,16 @@ import { nanoid } from 'nanoid'
 import type { Session, Entry, EntryFormat } from '../types'
 import { api } from '../api/client'
 import { useCalendarStore } from './calendarStore'
+import { safeBadgeEmoji } from '../utils/emoji'
+
+// Normalize a loaded session so bad/out-of-band data degrades gracefully —
+// e.g. a badge_emoji flattened to "??" by a non-UTF-8 write becomes 🎵 again.
+function normalizeSession(session: Session): Session {
+  return {
+    ...session,
+    entries: session.entries.map((e) => ({ ...e, badge_emoji: safeBadgeEmoji(e.badge_emoji) })),
+  }
+}
 
 function monthToTitle(month: string): string {
   const [year, mon] = month.split('-')
@@ -115,9 +125,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const cal = useCalendarStore.getState()
     const local = cal.getLocalSession(month)
     if (local) {
+      const normalized = normalizeSession(local)
       set({
-        session: local,
-        activeEntryId: local.entries[0]?.id ?? null,
+        session: normalized,
+        activeEntryId: normalized.entries[0]?.id ?? null,
         isLoading: false,
         isDirty: false,
       })
@@ -126,7 +137,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
     // 2. Try to load from DynamoDB
     try {
-      const session = await api.getSession(month)
+      const session = normalizeSession(await api.getSession(month))
       set({
         session,
         activeEntryId: session.entries[0]?.id ?? null,
