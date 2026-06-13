@@ -13,6 +13,7 @@ const STATUS_CONFIG: Record<SessionStatus, { label: string; dot: string; borderC
   picking:   { label: 'Picks in',          dot: 'var(--accent)',      borderColor: 'var(--accent)' },
   listening: { label: 'Listening',         dot: '#A0622A',            borderColor: '#A0622A' },
   done:      { label: 'Complete',          dot: '#2A6B4A',            borderColor: '#2A6B4A' },
+  skipped:   { label: 'Skipped',           dot: '#9ca3af',            borderColor: '#9ca3af' },
 }
 
 function RatingDots({ rating }: { rating: number }) {

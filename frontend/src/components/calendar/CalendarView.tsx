@@ -12,8 +12,8 @@ export default function CalendarView({ onSelectMonth }: Props) {
   const currentMonth = getCurrentMonth()
 
   function effectiveSummary(month: string, summary: MonthSummary): MonthSummary {
-    // Past months with any picks display as done — they've been listened to
-    if (month < currentMonth && summary.status !== 'empty') {
+    // Past months with picks display as done — unless explicitly skipped
+    if (month < currentMonth && summary.status !== 'empty' && summary.status !== 'skipped') {
       return { ...summary, status: 'done' }
     }
     return summary
@@ -44,6 +44,7 @@ export default function CalendarView({ onSelectMonth }: Props) {
           { dot: 'var(--accent)',      label: 'Picks in' },
           { dot: '#A0622A',            label: 'Listening' },
           { dot: '#2A6B4A',            label: 'Complete' },
+          { dot: '#9ca3af',            label: 'Skipped' },
         ].map(({ dot, label }) => (
           <span key={label} className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dot }} />

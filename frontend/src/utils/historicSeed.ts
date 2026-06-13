@@ -193,5 +193,8 @@ export const HISTORIC_SESSIONS: Session[] = [
 
 export const HISTORIC_ROSTER: [string, string, string] = ['Corey', 'Doug', 'Mike']
 
+// Months where picks were chosen but no meeting was held
+export const SKIPPED_MONTHS = new Set(['2026-04'])
+
 // Bump this when seed data changes to force a re-seed on existing clients
-export const SEED_VERSION = 4
+export const SEED_VERSION = 5

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Session } from '../types'
 
-export type SessionStatus = 'empty' | 'picking' | 'listening' | 'done'
+export type SessionStatus = 'empty' | 'picking' | 'listening' | 'done' | 'skipped'
 
 export interface MonthPick {
   selector: string

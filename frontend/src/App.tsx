@@ -6,7 +6,7 @@ import AppShell from './components/layout/AppShell'
 import CalendarView from './components/calendar/CalendarView'
 import SessionView from './components/session/SessionView'
 import RosterSetup from './components/roster/RosterSetup'
-import { HISTORIC_SESSIONS, HISTORIC_ROSTER, SEED_VERSION } from './utils/historicSeed'
+import { HISTORIC_SESSIONS, HISTORIC_ROSTER, SEED_VERSION, SKIPPED_MONTHS } from './utils/historicSeed'
 
 function getOrCreateUserId(name?: string): string {
   // Each crew member gets a stable userId keyed to their name
@@ -50,7 +50,7 @@ export default function App() {
     for (const session of HISTORIC_SESSIONS) {
       putLocalSession(session)
       updateMonthSummary(session.month, {
-        status: session.locked ? 'done' : session.phase === 'listening' ? 'listening' : 'picking',
+        status: SKIPPED_MONTHS.has(session.month) ? 'skipped' : session.locked ? 'done' : session.phase === 'listening' ? 'listening' : 'picking',
         picks: session.entries.map((e) => ({
           selector: e.selector,
           artist: e.artist,
