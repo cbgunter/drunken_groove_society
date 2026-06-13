@@ -16,7 +16,7 @@ export default function ShareButton({ sessionId }: Props) {
 
   return (
     <button className="btn-ghost text-xs" onClick={handleCopy}>
-      {copied ? '✓ Copied!' : '🔗 Copy link'}
+      {copied ? '✓ Copied!' : 'Copy link'}
     </button>
   )
 }

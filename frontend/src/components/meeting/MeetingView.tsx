@@ -25,8 +25,11 @@ function resolveNoteRevision(raw: unknown): NoteRevision | null {
 function RatingBadge({ rating }: { rating: number }) {
   if (!rating) return <span style={{ color: 'var(--text-muted)' }}>—</span>
   return (
-    <span className="font-semibold" style={{ color: 'var(--accent)' }}>
-      {'🎵'.repeat(rating)} {rating}/5
+    <span className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} className="text-xs" style={{ color: i < rating ? 'var(--accent)' : 'var(--border)' }}>●</span>
+      ))}
+      <span className="ml-1 text-xs font-semibold" style={{ color: 'var(--accent)' }}>{rating}/5</span>
     </span>
   )
 }
@@ -224,7 +227,7 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-bold" style={{ color: 'var(--accent)' }}>
-              🎙️ Meeting in progress
+              Meeting in progress
             </h2>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               Walk through each album together. Generate a summary, then end the meeting.
@@ -236,7 +239,7 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
               onClick={handleGenerate}
               disabled={isGenerating}
             >
-              {isGenerating ? 'Generating…' : summary ? '↻ Regenerate' : '✨ Generate summary'}
+              {isGenerating ? 'Generating…' : summary ? '↻ Regenerate' : 'Generate summary'}
             </button>
             <button
               className="text-sm px-3 py-1.5 rounded-lg font-medium transition-colors"
@@ -289,7 +292,12 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
               style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)' }}
             >
               <div>
-                <span className="text-lg mr-2">{entry.badge_emoji}</span>
+                <span
+                  className="w-6 h-6 rounded-full inline-flex items-center justify-center text-xs font-bold mr-2 flex-shrink-0"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                >
+                  {entry.selector[0]?.toUpperCase()}
+                </span>
                 <span className="font-semibold">{entry.artist}</span>
                 <span className="mx-1" style={{ color: 'var(--text-muted)' }}>—</span>
                 <span style={{ color: 'var(--text-secondary)' }}>{entry.title}</span>
@@ -298,8 +306,12 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
                 </span>
               </div>
               {avgRating > 0 && (
-                <span className="text-sm">
-                  avg {'🎵'.repeat(Math.round(avgRating))} {avgRating.toFixed(1)}/5
+                <span className="flex items-center gap-0.5 text-sm">
+                  <span className="text-xs mr-1" style={{ color: 'var(--text-muted)' }}>avg</span>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <span key={i} className="text-xs" style={{ color: i < Math.round(avgRating) ? 'var(--accent)' : 'var(--border)' }}>●</span>
+                  ))}
+                  <span className="ml-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{avgRating.toFixed(1)}/5</span>
                 </span>
               )}
             </div>
@@ -359,7 +371,7 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
                   setTimeout(() => setCopied(false), 2000)
                 }}
               >
-                {copied ? '✓ Copied' : '📋 Copy'}
+                {copied ? '✓ Copied' : 'Copy'}
               </button>
             </div>
           </div>

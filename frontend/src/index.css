@@ -4,35 +4,22 @@
 
 @layer base {
   :root {
-    --bg: #ffffff;
-    --bg-surface: #f9f8f6;
-    --bg-elevated: #f1efe9;
-    --text-primary: #1a1a1a;
-    --text-secondary: #6b7280;
-    --text-muted: #9ca3af;
-    --border: #e5e7eb;
-    --border-subtle: #f3f4f6;
-    --accent: #7c3aed;
-    --accent-light: #ede5ff;
-  }
-
-  .dark {
-    --bg: #111111;
-    --bg-surface: #1c1c1e;
-    --bg-elevated: #242426;
-    --text-primary: #f5f5f5;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
-    --border: #2d2d2d;
-    --border-subtle: #1f1f1f;
-    --accent: #a78bfa;
-    --accent-light: #2e1065;
+    --bg: #F8F4ED;
+    --bg-surface: #F0E9DE;
+    --bg-elevated: #E7DDD0;
+    --text-primary: #1C1814;
+    --text-secondary: #7A6B5E;
+    --text-muted: #A8998B;
+    --border: #DDD0C2;
+    --border-subtle: #EAE2D8;
+    --accent: #2A5C42;
+    --accent-light: #E2EFEA;
   }
 
   html {
     background: var(--bg);
     color: var(--text-primary);
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Lato', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
 
   * {
@@ -68,7 +55,7 @@
   }
 
   .btn-primary:hover {
-    opacity: 0.9;
+    opacity: 0.88;
   }
 
   .btn-primary:disabled {

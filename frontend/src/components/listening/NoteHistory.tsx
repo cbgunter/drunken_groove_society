@@ -45,8 +45,11 @@ export default function NoteHistory({ history }: Props) {
                   {timeAgo(rev.savedAt)}
                 </span>
                 {rev.rating > 0 && (
-                  <span className="text-xs">
-                    {'🎵'.repeat(rev.rating)} {rev.rating}/5
+                  <span className="flex items-center gap-0.5 text-xs">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <span key={i} style={{ color: i < rev.rating ? 'var(--accent)' : 'var(--border)' }}>●</span>
+                    ))}
+                    <span className="ml-1" style={{ color: 'var(--text-muted)' }}>{rev.rating}/5</span>
                   </span>
                 )}
               </div>

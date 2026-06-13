@@ -64,7 +64,7 @@ export default function NotesFooter({ session, identity, isSaved, onNotesSubmitt
               disabled={isSubmitting || !isSaved}
               title={!isSaved ? 'Save the session first' : undefined}
             >
-              {isSubmitting ? 'Sharing…' : '📤 Share my notes'}
+              {isSubmitting ? 'Sharing…' : 'Share my notes'}
             </button>
           ) : (
             <span
@@ -79,7 +79,7 @@ export default function NotesFooter({ session, identity, isSaved, onNotesSubmitt
             className="btn-ghost text-sm"
             onClick={handleShowPeers}
           >
-            {showPeers ? 'Hide notes' : '👥 Compare notes'}
+            {showPeers ? 'Hide notes' : 'Compare notes'}
           </button>
         </div>
       </div>

@@ -41,18 +41,6 @@ export default function App() {
     setUserId(getOrCreateUserId(name))
   }
 
-  // Dark mode
-  const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem('dgs_theme')
-    if (saved) return saved === 'dark'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-  })
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-    localStorage.setItem('dgs_theme', dark ? 'dark' : 'light')
-  }, [dark])
-
   // Seed historic data — re-runs whenever SEED_VERSION is bumped
   useEffect(() => {
     if (seedVersion >= SEED_VERSION) return
@@ -132,8 +120,6 @@ export default function App() {
 
   return (
     <AppShell
-      dark={dark}
-      onToggleDark={() => setDark((d) => !d)}
       onHome={handleBackToCalendar}
       userName={userName}
       onChangeIdentity={() => setShowIdentityPrompt(true)}

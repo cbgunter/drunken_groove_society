@@ -198,8 +198,13 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
     >
       {/* Selector header */}
       <div className="flex items-center gap-2">
-        <span className="text-xl">{entry.badge_emoji}</span>
-        <span className="font-semibold text-sm" style={{ color: 'var(--accent)' }}>
+        <span
+          className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+          style={{ background: 'var(--accent)', color: '#fff' }}
+        >
+          {entry.selector[0]?.toUpperCase()}
+        </span>
+        <span className="font-bold text-sm uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
           {entry.selector}'s pick
         </span>
         {looked && (
@@ -271,14 +276,14 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
           onClick={handleLookup}
           disabled={isLooking || !artist.trim() || !album.trim()}
         >
-          {isLooking ? '🔍 Looking up…' : looked ? '↻ Re-lookup' : '🔍 Look up'}
+          {isLooking ? 'Looking up…' : looked ? 'Re-lookup' : 'Look up'}
         </button>
         <button
           className="btn-primary text-xs flex-1 justify-center"
           onClick={handleConfirm}
           disabled={isSaving || (!artist.trim() && !album.trim())}
         >
-          {isSaving ? 'Saving…' : looked ? '✓ Confirm pick' : '💾 Save'}
+          {isSaving ? 'Saving…' : looked ? 'Confirm pick' : 'Save'}
         </button>
       </div>
     </div>

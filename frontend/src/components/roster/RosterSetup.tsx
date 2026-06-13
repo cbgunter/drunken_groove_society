@@ -36,7 +36,6 @@ export default function RosterSetup({ onDone, isEdit = false }: Props) {
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
       {!isEdit && (
         <div className="text-center">
-          <div className="text-4xl mb-3">🍺</div>
           <h1 className="text-2xl font-bold mb-1">Who's in the crew?</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             Each person picks one album per month. Enter your names to get started.

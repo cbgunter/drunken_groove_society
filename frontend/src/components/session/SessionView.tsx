@@ -136,14 +136,14 @@ export default function SessionView({ session, identity, month, onBack }: Props)
             ✎ Edit pick
           </button>
           <button className="btn-primary text-xs" onClick={handleStartMeeting}>
-            🎙️ Start meeting
+            Start meeting
           </button>
         </div>
       } />
       {!isSaved && (
         <div className="flex justify-end">
           <button className="btn-ghost text-xs" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving…' : '💾 Save changes'}
+            {isSaving ? 'Saving…' : 'Save changes'}
           </button>
         </div>
       )}

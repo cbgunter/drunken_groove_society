@@ -96,7 +96,7 @@ export default function SummaryPanel({ session, locked, onGenerated }: Props) {
             dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }}
           />
           <button className="btn-ghost text-xs" onClick={handleCopy}>
-            {copied ? '✓ Copied!' : '📋 Copy to clipboard'}
+            {copied ? '✓ Copied!' : 'Copy to clipboard'}
           </button>
         </div>
       )}

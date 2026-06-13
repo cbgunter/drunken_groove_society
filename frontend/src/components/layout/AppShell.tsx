@@ -1,55 +1,51 @@
 import type { ReactNode } from 'react'
 
 interface Props {
-  dark: boolean
-  onToggleDark: () => void
   onHome: () => void
   userName: string
   onChangeIdentity: () => void
   children: ReactNode
 }
 
-export default function AppShell({ dark, onToggleDark, onHome, userName, onChangeIdentity, children }: Props) {
+export default function AppShell({ onHome, userName, onChangeIdentity, children }: Props) {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <header
-        className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b"
+        className="sticky top-0 z-40 flex items-center justify-between px-6 py-3 border-b"
         style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
       >
         <button
           onClick={onHome}
-          className="flex items-center gap-2 transition-opacity hover:opacity-70"
+          className="flex items-center gap-3 transition-opacity hover:opacity-70"
         >
-          <img src="/logo.jpg" alt="DGS" className="w-8 h-8 rounded-full object-cover" style={{ background: '#fff' }} />
-          <span className="font-semibold text-sm tracking-tight">Drunken Groove Society</span>
+          <img src="/logo.jpg" alt="DGS" className="w-7 h-7 rounded-full object-cover" />
+          <span className="font-bold text-sm tracking-wide" style={{ letterSpacing: '0.04em' }}>
+            Drunken Groove Society
+          </span>
         </button>
 
-        <div className="flex items-center gap-2">
-          {/* Identity chip */}
-          <button
-            onClick={onChangeIdentity}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
-            style={{
-              background: userName ? 'var(--accent-light)' : 'var(--bg-elevated)',
-              color: userName ? 'var(--accent)' : 'var(--text-muted)',
-              border: `1px solid ${userName ? 'var(--accent)' : 'var(--border)'}`,
-            }}
-            title="Change who you are"
-          >
-            {userName ? `👤 ${userName}` : '👤 Who are you?'}
-          </button>
-
-          <button
-            onClick={onToggleDark}
-            className="text-lg w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-            aria-label="Toggle dark mode"
-          >
-            {dark ? '☀️' : '🌙'}
-          </button>
-        </div>
+        <button
+          onClick={onChangeIdentity}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          style={{
+            background: userName ? 'var(--accent-light)' : 'var(--bg-elevated)',
+            color: userName ? 'var(--accent)' : 'var(--text-muted)',
+            border: `1px solid ${userName ? 'var(--accent)' : 'var(--border)'}`,
+          }}
+          title="Change who you are"
+        >
+          {userName && (
+            <span
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+              style={{ background: 'var(--accent)', color: '#fff' }}
+            >
+              {userName[0].toUpperCase()}
+            </span>
+          )}
+          {userName || 'Who are you?'}
+        </button>
       </header>
-      <main className="max-w-3xl mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-5xl mx-auto px-6 py-8">{children}</main>
     </div>
   )
 }

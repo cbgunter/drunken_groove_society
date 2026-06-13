@@ -324,7 +324,7 @@ export default function ListeningView({ session, identity, locked }: Props) {
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving ? 'Saving…' : '💾 Save notes'}
+              {isSaving ? 'Saving…' : 'Save notes'}
             </button>
           </div>
         )}

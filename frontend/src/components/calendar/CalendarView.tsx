@@ -31,15 +31,15 @@ export default function CalendarView({ onSelectMonth }: Props) {
       </div>
 
       {/* Status legend */}
-      <div className="flex flex-wrap gap-4 mb-5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+      <div className="flex flex-wrap gap-5 mb-6 text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
         {[
           { dot: 'var(--text-muted)',  label: 'No picks' },
-          { dot: 'var(--accent)',      label: 'Albums selected' },
-          { dot: '#d97706',            label: 'Notes in' },
-          { dot: '#059669',            label: 'Meeting complete' },
+          { dot: 'var(--accent)',      label: 'Picks in' },
+          { dot: '#A0622A',            label: 'Listening' },
+          { dot: '#2A6B4A',            label: 'Complete' },
         ].map(({ dot, label }) => (
-          <span key={label} className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full" style={{ background: dot }} />
+          <span key={label} className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: dot }} />
             {label}
           </span>
         ))}

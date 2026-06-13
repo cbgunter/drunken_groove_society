@@ -34,10 +34,18 @@ export default function EntryTabs({ entries, activeId, onSelect, locked }: Props
               border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
             }}
           >
-            <span>{entry.badge_emoji}</span>
+            <span
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+              style={{
+                background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--accent)',
+                color: '#fff',
+              }}
+            >
+              {entry.selector[0]?.toUpperCase()}
+            </span>
             <span className="max-w-[140px] truncate">{label}</span>
             {locked && (
-              <span className="text-[10px] opacity-60">🔒</span>
+              <span className="text-[10px] opacity-50 font-medium">Locked</span>
             )}
           </button>
         )
