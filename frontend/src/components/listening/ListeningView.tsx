@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Session, Entry } from '../../types'
+import type { Session, Entry, TrackReaction } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useListeningStore } from '../../store/listeningStore'
 import EntryMeta from '../entry/EntryMeta'
@@ -12,15 +12,29 @@ interface Props {
   locked: boolean
 }
 
+const REACTIONS: { value: TrackReaction; label: string; color: string; border: string; text: string }[] = [
+  { value: 'loved',  label: 'Loved it', color: '#d1fae5', border: '#10b981', text: '#065f46' },
+  { value: 'mixed',  label: 'Mixed',    color: '#fef3c7', border: '#f59e0b', text: '#92400e' },
+  { value: 'meh',    label: 'Meh',      color: 'var(--bg-elevated)', border: 'var(--border)', text: 'var(--text-muted)' },
+]
+
+function reactionStyle(r: TrackReaction) {
+  return REACTIONS.find((x) => x.value === r)!
+}
+
 function TrackPillNotes({
   tracks,
   trackNotes,
+  trackReactions,
   onChange,
+  onReaction,
   readOnly,
 }: {
   tracks: string[]
   trackNotes: Record<string, string>
+  trackReactions: Record<string, TrackReaction>
   onChange: (track: string, note: string) => void
+  onReaction: (track: string, reaction: TrackReaction | null) => void
   readOnly: boolean
 }) {
   const [activeTrack, setActiveTrack] = useState<string | null>(null)
@@ -35,28 +49,41 @@ function TrackPillNotes({
       <div className="flex flex-wrap gap-1.5 mb-2">
         {tracks.map((track, i) => {
           const hasNote = !!trackNotes[track]?.trim()
+          const reaction = trackReactions[track]
+          const hasSignal = hasNote || !!reaction
           const isActive = activeTrack === track
+          const rs = reaction ? reactionStyle(reaction) : null
+
           return (
             <button
               key={i}
               onClick={() => setActiveTrack(isActive ? null : track)}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all"
               style={{
-                background: isActive ? 'var(--accent)' : hasNote ? 'var(--accent-light)' : 'var(--bg-elevated)',
-                border: `1px solid ${isActive ? 'var(--accent)' : hasNote ? 'var(--accent)' : 'var(--border)'}`,
-                color: isActive ? '#fff' : hasNote ? 'var(--accent)' : 'var(--text-secondary)',
+                background: isActive
+                  ? 'var(--accent)'
+                  : rs ? rs.color
+                  : hasNote ? 'var(--accent-light)'
+                  : 'var(--bg-elevated)',
+                border: `1px solid ${isActive
+                  ? 'var(--accent)'
+                  : rs ? rs.border
+                  : hasNote ? 'var(--accent)'
+                  : 'var(--border)'}`,
+                color: isActive ? '#fff' : rs ? rs.text : hasNote ? 'var(--accent)' : 'var(--text-secondary)',
               }}
               title={track}
             >
               <span style={{ opacity: 0.6 }}>{i + 1}.</span>
               <span>{track}</span>
-              {hasNote && !isActive && <span>✎</span>}
+              {hasSignal && !isActive && <span style={{ opacity: 0.7 }}>{hasNote ? '✎' : '●'}</span>}
             </button>
           )
         })}
       </div>
+
       {activeTrack && (
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
             Notes for: <strong>{activeTrack}</strong>
           </label>
@@ -72,6 +99,29 @@ function TrackPillNotes({
             readOnly={readOnly}
             onChange={(e) => !readOnly && onChange(activeTrack, e.target.value)}
           />
+          {!readOnly && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>How did it land?</span>
+              {REACTIONS.map(({ value, label, color, border, text }) => {
+                const current = trackReactions[activeTrack]
+                const isSelected = current === value
+                return (
+                  <button
+                    key={value}
+                    onClick={() => onReaction(activeTrack, isSelected ? null : value)}
+                    className="px-2.5 py-0.5 rounded-full text-xs font-medium transition-all"
+                    style={{
+                      background: isSelected ? color : 'var(--bg-elevated)',
+                      border: `1px solid ${isSelected ? border : 'var(--border)'}`,
+                      color: isSelected ? text : 'var(--text-muted)',
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -140,7 +190,6 @@ function ListeningHints({ entry }: { entry: Entry }) {
         Listening Hints
       </h3>
 
-      {/* Genre tags */}
       {entry.genre_tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {entry.genre_tags.map((tag) => (
@@ -153,7 +202,6 @@ function ListeningHints({ entry }: { entry: Entry }) {
         </div>
       )}
 
-      {/* About sections */}
       {entry.about_band && (
         <div>
           <p className="text-[11px] font-semibold mb-0.5" style={{ color: 'var(--text-secondary)' }}>About the band</p>
@@ -167,7 +215,6 @@ function ListeningHints({ entry }: { entry: Entry }) {
         </div>
       )}
 
-      {/* Fun facts */}
       {entry.fun_facts.length > 0 && (
         <div>
           <p className="text-[11px] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Quick facts</p>
@@ -182,7 +229,6 @@ function ListeningHints({ entry }: { entry: Entry }) {
         </div>
       )}
 
-      {/* Tracklist */}
       {entry.tracklist.length > 0 && (
         <div>
           <p className="text-[11px] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Tracklist</p>
@@ -205,8 +251,14 @@ function ListeningHints({ entry }: { entry: Entry }) {
 
 export default function ListeningView({ session, identity, locked }: Props) {
   const { activeEntryId, setActiveEntry } = useSessionStore()
-  const { getDraft, setDraft, setRating, getRating, getHistory, saveDraft, isSaving, saveError } =
-    useListeningStore()
+  const {
+    getDraft, setDraft,
+    setRating, getRating,
+    getHistory, saveDraft,
+    getTrackReactions, setTrackReaction,
+    getPickerNote, setPickerNote,
+    isSaving, saveError,
+  } = useListeningStore()
 
   const activeEntry = session.entries.find((e) => e.id === activeEntryId) ?? session.entries[0]
 
@@ -214,8 +266,12 @@ export default function ListeningView({ session, identity, locked }: Props) {
 
   const albumNotes = getDraft(session.id, activeEntry.id, 'album')
   const trackNotes = getDraft(session.id, activeEntry.id, 'tracks') as Record<string, string>
+  const trackReactions = getTrackReactions(session.id, activeEntry.id)
+  const pickerNote = getPickerNote(session.id, activeEntry.id)
   const rating = getRating(session.id, activeEntry.id)
   const history = getHistory(session.id, activeEntry.id)
+
+  const isPicker = activeEntry.selector === identity.userName
 
   async function handleSave() {
     await saveDraft(session.id, activeEntry.id, identity.userId, identity.userName)
@@ -284,6 +340,36 @@ export default function ListeningView({ session, identity, locked }: Props) {
           />
         </div>
 
+        {/* Picker's reason — only shown to the person who picked this album */}
+        {isPicker && (
+          <div
+            className="rounded-lg p-3 space-y-1.5"
+            style={{ background: 'var(--bg)', border: '1px solid var(--accent)', borderStyle: 'dashed' }}
+          >
+            <label className="block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--accent)' }}>
+              Why did you pick this album?
+            </label>
+            <textarea
+              className="w-full rounded-lg px-3 py-2 text-sm resize-y min-h-[72px] outline-none"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                lineHeight: '1.6',
+              }}
+              placeholder="What made you want to bring this one to the group?"
+              value={pickerNote}
+              readOnly={locked}
+              onChange={(e) => !locked && setPickerNote(session.id, activeEntry.id, e.target.value)}
+            />
+            {!locked && (
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                Shown to the group at the start of your album's discussion.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Album-level notes */}
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -304,14 +390,16 @@ export default function ListeningView({ session, identity, locked }: Props) {
           />
         </div>
 
-        {/* Per-track notes */}
+        {/* Per-track notes + reactions */}
         <TrackPillNotes
           tracks={activeEntry.tracklist}
           trackNotes={typeof trackNotes === 'object' ? trackNotes : {}}
+          trackReactions={trackReactions}
           onChange={(track, note) => {
             const next = { ...(typeof trackNotes === 'object' ? trackNotes : {}), [track]: note }
             setDraft(session.id, activeEntry.id, 'tracks', next)
           }}
+          onReaction={(track, reaction) => setTrackReaction(session.id, activeEntry.id, track, reaction)}
           readOnly={locked}
         />
 

@@ -36,11 +36,15 @@ export interface Session {
   updatedAt: string
 }
 
+export type TrackReaction = 'loved' | 'mixed' | 'meh'
+
 // Per-save snapshot for history
 export interface NoteRevision {
   albumNotes: string
-  trackNotes: Record<string, string>  // track name → note
-  rating: number                      // 1–5, 0 = not rated
+  trackNotes: Record<string, string>     // track name → note
+  trackReactions?: Record<string, TrackReaction>  // track name → reaction
+  pickerNote?: string                    // only the selector fills this in
+  rating: number                         // 1–5, 0 = not rated
   savedAt: string
 }
 

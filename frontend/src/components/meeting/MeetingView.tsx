@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Entry, NoteRevision, Session, UserSessionNotes } from '../../types'
+import type { Entry, NoteRevision, Session, TrackReaction, UserSessionNotes } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useListeningStore } from '../../store/listeningStore'
 import { useCalendarStore } from '../../store/calendarStore'
@@ -20,6 +20,24 @@ function resolveNoteRevision(raw: unknown): NoteRevision | null {
   if ('current' in r && r.current && typeof r.current === 'object') return r.current as NoteRevision
   if ('albumNotes' in r || 'rating' in r || 'trackNotes' in r) return r as unknown as NoteRevision
   return null
+}
+
+const REACTION_CONFIG: Record<TrackReaction, { label: string; color: string; text: string }> = {
+  loved: { label: 'Loved it', color: '#d1fae5', text: '#065f46' },
+  mixed: { label: 'Mixed',    color: '#fef3c7', text: '#92400e' },
+  meh:   { label: 'Meh',      color: 'var(--bg-elevated)', text: 'var(--text-muted)' },
+}
+
+function ReactionPill({ reaction, count }: { reaction: TrackReaction; count: number }) {
+  const cfg = REACTION_CONFIG[reaction]
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+      style={{ background: cfg.color, color: cfg.text }}
+    >
+      {cfg.label} {count}
+    </span>
+  )
 }
 
 function RatingBadge({ rating }: { rating: number }) {
@@ -100,38 +118,73 @@ function TrackByTrackView({ entry, allMerged }: { entry: Entry; allMerged: UserS
     )
   }
 
+  // Build per-track signal data
+  const trackData = entry.tracklist.map((track, i) => {
+    const userNotes = allMerged
+      .map((u) => {
+        const rev = resolveNoteRevision(u.entries[entry.id])
+        return {
+          name: u.userName || u.userId.slice(0, 6),
+          note: rev?.trackNotes?.[track],
+          reaction: rev?.trackReactions?.[track] as TrackReaction | undefined,
+        }
+      })
+      .filter((x) => x.note?.trim() || x.reaction)
+
+    const reactionCounts = { loved: 0, mixed: 0, meh: 0 } as Record<TrackReaction, number>
+    userNotes.forEach((x) => { if (x.reaction) reactionCounts[x.reaction]++ })
+
+    return { track, index: i, userNotes, reactionCounts, hasSignal: userNotes.length > 0 }
+  })
+
+  const withSignal = trackData.filter((t) => t.hasSignal)
+  const withoutSignal = trackData.filter((t) => !t.hasSignal)
+
+  function renderTrack({ track, index, userNotes, reactionCounts }: typeof trackData[0]) {
+    return (
+      <div key={index} className="px-3 py-2.5 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>
+            {index + 1}. {track}
+          </p>
+          <div className="flex items-center gap-1 flex-wrap justify-end">
+            {(Object.entries(reactionCounts) as [TrackReaction, number][])
+              .filter(([, count]) => count > 0)
+              .map(([reaction, count]) => (
+                <ReactionPill key={reaction} reaction={reaction} count={count} />
+              ))}
+          </div>
+        </div>
+        <div className="space-y-1">
+          {userNotes.map(({ name, note, reaction }) => (
+            <div key={name} className="flex gap-2 text-xs items-baseline">
+              <span className="font-semibold flex-shrink-0" style={{ color: 'var(--accent)' }}>
+                {name}:
+              </span>
+              {note ? (
+                <span style={{ color: 'var(--text-primary)' }}>{note}</span>
+              ) : reaction ? (
+                <span className="italic" style={{ color: 'var(--text-muted)' }}>
+                  {REACTION_CONFIG[reaction].label.toLowerCase()}
+                </span>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-      {entry.tracklist.map((track, i) => {
-        const userNotes = allMerged
-          .map((u) => ({
-            name: u.userName || u.userId.slice(0, 6),
-            note: resolveNoteRevision(u.entries[entry.id])?.trackNotes?.[track],
-          }))
-          .filter((x) => x.note?.trim())
-
-        return (
-          <div key={i} className="px-3 py-2">
-            <p className="text-[11px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-              {i + 1}. {track}
-            </p>
-            {userNotes.length === 0 ? (
-              <p className="text-xs" style={{ color: 'var(--text-muted)', opacity: 0.5 }}>No notes</p>
-            ) : (
-              <div className="space-y-0.5">
-                {userNotes.map(({ name, note }) => (
-                  <div key={name} className="flex gap-2 text-xs">
-                    <span className="font-semibold flex-shrink-0" style={{ color: 'var(--accent)' }}>
-                      {name}:
-                    </span>
-                    <span style={{ color: 'var(--text-primary)' }}>{note}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )
-      })}
+      {withSignal.map(renderTrack)}
+      {withoutSignal.length > 0 && (
+        <div className="px-3 py-2" style={{ opacity: 0.4 }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>
+            No notes — {withoutSignal.map((t) => t.track).join(', ')}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -200,7 +253,6 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
 
     lockSession(overallRatings)
 
-    // Update calendar before remote save so the cell reflects done even if remote fails
     updateMonthSummary(session.month, {
       status: 'done',
       picks: session.entries.map((e) => ({ selector: e.selector, artist: e.artist, title: e.title })),
@@ -280,6 +332,10 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
           .filter((r) => r > 0)
         const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0
 
+        // Find the picker's "why I picked this" note
+        const pickerUserNotes = allMerged.find((u) => u.userName === entry.selector)
+        const pickerNote = resolveNoteRevision(pickerUserNotes?.entries[entry.id])?.pickerNote
+
         return (
           <div
             key={entry.id}
@@ -315,6 +371,29 @@ export default function MeetingView({ session, identity, allNotes, onEndMeeting 
                 </span>
               )}
             </div>
+
+            {/* Picker's intro — why they chose this album */}
+            {pickerNote && (
+              <div
+                className="px-4 py-3 flex gap-3"
+                style={{ background: 'var(--accent-light)', borderBottom: '1px solid var(--accent)' }}
+              >
+                <div
+                  className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                >
+                  {entry.selector[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold mb-1" style={{ color: 'var(--accent)' }}>
+                    Why {entry.selector} picked it
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                    {pickerNote}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Notes content */}
             {viewMode === 'track' ? (

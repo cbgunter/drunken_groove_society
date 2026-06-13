@@ -1,4 +1,4 @@
-import type { Session, SessionNotes, SummaryRequest, SummaryResponse, LookupRequest, LookupResult } from '../types'
+import type { Session, SessionNotes, SummaryRequest, SummaryResponse, LookupRequest, LookupResult, TrackReaction } from '../types'
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
@@ -31,7 +31,7 @@ export const api = {
     userId: string,
     userName: string,
     entryId: string,
-    notes: { albumNotes: string; trackNotes: Record<string, string>; rating: number },
+    notes: { albumNotes: string; trackNotes: Record<string, string>; rating: number; pickerNote?: string; trackReactions?: Record<string, TrackReaction> },
   ) =>
     request<{ ok: boolean }>(`/sessions/${sessionId}/notes`, {
       method: 'PUT',
