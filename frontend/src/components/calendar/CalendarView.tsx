@@ -1,4 +1,5 @@
 import { useCalendarStore, getCalendarMonths, getCurrentMonth } from '../../store/calendarStore'
+import type { MonthSummary } from '../../store/calendarStore'
 import MonthCell from './MonthCell'
 
 interface Props {
@@ -10,7 +11,13 @@ export default function CalendarView({ onSelectMonth }: Props) {
   const months = getCalendarMonths()
   const currentMonth = getCurrentMonth()
 
-  const years = [...new Set(months.map((m) => m.slice(0, 4)))]
+  function effectiveSummary(month: string, summary: MonthSummary): MonthSummary {
+    // Past months with any picks display as done — they've been listened to
+    if (month < currentMonth && summary.status !== 'empty') {
+      return { ...summary, status: 'done' }
+    }
+    return summary
+  }
 
   return (
     <div>
@@ -19,13 +26,13 @@ export default function CalendarView({ onSelectMonth }: Props) {
         <img
           src="/logo-grid.jpg"
           alt="The Drunken Groove Society"
-          className="w-24 h-24 object-contain rounded-xl flex-shrink-0"
+          className="w-20 h-20 object-contain rounded-xl flex-shrink-0"
           style={{ background: '#fff' }}
         />
         <div>
           <h1 className="text-xl font-bold">Sessions</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Dec 2025 — Dec 2026 · One pick per person per month
+            Rolling 12 months · One pick per person per month
           </p>
         </div>
       </div>
@@ -45,34 +52,24 @@ export default function CalendarView({ onSelectMonth }: Props) {
         ))}
       </div>
 
-      {/* Calendar grid — grouped by year */}
-      {years.map((year) => {
-        const yearMonths = months.filter((m) => m.startsWith(year))
-        return (
-          <div key={year} className="mb-8">
-            <p
-              className="text-xs font-semibold uppercase tracking-widest mb-3"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {year}
-            </p>
-            <div
-              className="grid gap-3"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}
-            >
-              {yearMonths.map((month) => (
-                <MonthCell
-                  key={month}
-                  month={month}
-                  summary={getMonthSummary(month)}
-                  isCurrent={month === currentMonth}
-                  onClick={() => onSelectMonth(month)}
-                />
-              ))}
-            </div>
-          </div>
-        )
-      })}
+      {/* Flat grid — no year grouping; year shown inside each card */}
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))' }}
+      >
+        {months.map((month) => {
+          const summary = effectiveSummary(month, getMonthSummary(month))
+          return (
+            <MonthCell
+              key={month}
+              month={month}
+              summary={summary}
+              isCurrent={month === currentMonth}
+              onClick={() => onSelectMonth(month)}
+            />
+          )
+        })}
+      </div>
     </div>
   )
 }

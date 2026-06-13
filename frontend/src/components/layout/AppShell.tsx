@@ -45,7 +45,7 @@ export default function AppShell({ onHome, userName, onChangeIdentity, children 
           {userName || 'Who are you?'}
         </button>
       </header>
-      <main className="max-w-5xl mx-auto px-6 py-8">{children}</main>
+      <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
     </div>
   )
 }

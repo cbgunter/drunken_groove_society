@@ -37,6 +37,7 @@ function RatingDots({ rating }: { rating: number }) {
 
 export default function MonthCell({ month, summary, isCurrent, onClick }: Props) {
   const { short, long } = formatMonthLabel(month)
+  const year = month.slice(0, 4)
   const cfg = STATUS_CONFIG[summary.status]
   const isDone = summary.status === 'done'
 
@@ -59,6 +60,7 @@ export default function MonthCell({ month, summary, isCurrent, onClick }: Props)
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: cfg.dot }} />
           <span className="text-sm font-bold tracking-tight">{short}</span>
+          <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{year}</span>
           {isCurrent && (
             <span
               className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wide"

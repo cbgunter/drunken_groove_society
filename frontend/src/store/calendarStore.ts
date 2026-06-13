@@ -69,12 +69,15 @@ export const useCalendarStore = create<CalendarState>()(
   ),
 )
 
-// Dec 2025 is the fixed start (first session). End rolls to current month + 3.
+// Rolling 12-month window: end = current+5, start = max(Dec 2025, end-11).
+// Months older than 11 months drop off automatically as time passes.
 export function getCalendarMonths(): string[] {
   const months: string[] = []
-  const start = new Date(2025, 11, 1)
+  const projectStart = new Date(2025, 11, 1) // Dec 2025
   const now = new Date()
-  const end = new Date(now.getFullYear(), now.getMonth() + 3, 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 5, 1)
+  const rollingStart = new Date(end.getFullYear(), end.getMonth() - 11, 1)
+  const start = rollingStart < projectStart ? projectStart : rollingStart
   const cur = new Date(start)
   while (cur <= end) {
     const y = cur.getFullYear()
