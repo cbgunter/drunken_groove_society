@@ -49,8 +49,8 @@ export default function MonthCell({ month, summary, isCurrent, onClick }: Props)
       className="w-full h-full text-left rounded-xl p-4 transition-all hover:scale-[1.01] active:scale-[0.99]"
       style={{
         background: 'var(--bg-surface)',
-        border: `1.5px solid ${isCurrent && !isDone ? 'var(--accent)' : cfg.borderColor}`,
-        boxShadow: isCurrent && !isDone ? '0 0 0 3px var(--accent-light)' : undefined,
+        border: `1.5px solid ${isCurrent ? 'var(--accent)' : cfg.borderColor}`,
+        boxShadow: isCurrent ? '0 0 0 3px var(--accent-light)' : undefined,
       }}
       onClick={onClick}
       title={long}
@@ -61,12 +61,12 @@ export default function MonthCell({ month, summary, isCurrent, onClick }: Props)
           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: cfg.dot }} />
           <span className="text-sm font-bold tracking-tight">{short}</span>
           <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{year}</span>
-          {isCurrent && (
+          {isCurrent && !isDone && (
             <span
               className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 uppercase tracking-wide"
-              style={{ background: isDone ? '#2A6B4A' : 'var(--accent)', color: '#fff' }}
+              style={{ background: 'var(--accent)', color: '#fff' }}
             >
-              {isDone ? 'Done' : 'Now'}
+              Now
             </span>
           )}
         </div>
