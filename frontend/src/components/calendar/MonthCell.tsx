@@ -73,11 +73,11 @@ export default function MonthCell({ month, summary, isCurrent, onClick }: Props)
         </div>
         {isDone && avgRating !== null && avgRating > 0 ? (
           <RatingDots rating={avgRating} />
-        ) : (
+        ) : !isDone ? (
           <span className="text-[10px] flex-shrink-0 uppercase tracking-wide font-medium" style={{ color: 'var(--text-muted)' }}>
             {cfg.label}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Picks */}
