@@ -24,7 +24,7 @@ function derivePhase(session: Session, userName: string): 'selection' | 'listeni
 }
 
 export default function SessionView({ session, identity, month, onBack }: Props) {
-  const { saveToRemote, isSaving, error: saveError } = useSessionStore()
+  const { saveToRemote, isSaving, error: saveError, unlockSession } = useSessionStore()
   const { updateMonthSummary } = useCalendarStore()
   const { fetchPeerNotes, peerFetchError, isFetchingPeers } = useNotesStore()
 
@@ -63,15 +63,32 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   }
 
   async function handleRetryNotes() {
-    await fetchPeerNotes(session.id)
+    await fetchPeerNotes(session.id, true)
     setAllNotes(useNotesStore.getState().peerNotes)
+  }
+
+  async function handleUnlock() {
+    unlockSession()
+    await saveToRemote()
   }
 
   // ── Locked / done view ──────────────────────────────────────────────────
   if (phase === 'done' && !meetingMode) {
     return (
       <div className="space-y-4">
-        <BackBar onBack={onBack} label={long} />
+        <BackBar
+          onBack={onBack}
+          label={long}
+          extra={
+            <button
+              className="btn-ghost text-xs"
+              onClick={handleUnlock}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Unlocking…' : 'Unlock session'}
+            </button>
+          }
+        />
         <div
           className="rounded-lg px-3 py-2 text-sm flex items-center gap-2"
           style={{ background: '#d1fae5', border: '1px solid #6ee7b7', color: '#065f46' }}

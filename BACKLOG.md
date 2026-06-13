@@ -9,13 +9,7 @@ Improvements identified but deferred. Ordered roughly by priority.
 ## Medium priority
 
 ### Historic seed data in TypeScript literals
-`frontend/src/utils/historicSeed.ts` embeds 3 complete past sessions as hardcoded TypeScript objects. Corrections require a code change and redeploy. As real sessions accumulate in DynamoDB (starting from March 2026 onward), consider migrating the seed data into DynamoDB directly so all sessions live in one place.
-
-### Peer notes cache
-`SessionView` calls `fetchPeerNotes()` unconditionally on every mount. Add an `updatedAt` timestamp check in `notesStore` so the fetch is skipped when the cached data is recent (e.g., within the last 5 minutes).
-
-### Session unlock flow
-Once a session is locked, there is no way to unlock it from the UI. Add a simple unlock affordance for the session owner to correct mistakes after locking (e.g., wrong rating, missed entry).
+`frontend/src/utils/historicSeed.ts` embeds past sessions as hardcoded TypeScript objects. Corrections require a code change and redeploy. A one-time migration script could PUT each seed session to DynamoDB (skipping any month that already exists) then remove it from the local seed. Deferred: Apr/May 2026 may already have real DynamoDB records, so a blind PUT risks overwriting them.
 
 ---
 

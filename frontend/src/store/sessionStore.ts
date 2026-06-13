@@ -67,6 +67,7 @@ interface SessionState {
   updateSession: (updates: Partial<Pick<Session, 'title' | 'date'>>) => void
   updateEntry: (id: string, updates: Partial<Entry>) => void
   lockSession: (overallRatings?: Record<string, number>) => void
+  unlockSession: () => void
   loadOrCreateForMonth: (month: string, roster: string[]) => Promise<void>
   saveToRemote: () => Promise<string>
   clearError: () => void
@@ -115,6 +116,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         overallRatings: overallRatings ?? session.overallRatings,
         updatedAt: new Date().toISOString(),
       },
+    })
+  },
+
+  unlockSession: () => {
+    const { session } = get()
+    if (!session) return
+    set({
+      session: {
+        ...session,
+        locked: false,
+        phase: 'listening',
+        updatedAt: new Date().toISOString(),
+      },
+      isDirty: true,
     })
   },
 

@@ -18,6 +18,8 @@ interface NotesState {
   peerFetchError: string | null
   isSubmitting: boolean
   submitError: string | null
+  // In-memory cache stamp — not persisted; resets on page load
+  peerNotesFetchedFor: { sessionId: string; at: number } | null
 
   getDraft: (sessionId: string, entryId: string) => string
   setDraft: (sessionId: string, entryId: string, content: string) => void
@@ -28,7 +30,7 @@ interface NotesState {
     userName: string,
     entryIds: string[],
   ) => Promise<void>
-  fetchPeerNotes: (sessionId: string) => Promise<void>
+  fetchPeerNotes: (sessionId: string, force?: boolean) => Promise<void>
   clearSubmitError: () => void
 }
 
@@ -42,6 +44,7 @@ export const useNotesStore = create<NotesState>()(
       peerFetchError: null,
       isSubmitting: false,
       submitError: null,
+      peerNotesFetchedFor: null,
 
       getDraft: (sessionId, entryId) =>
         get().drafts[draftKey(sessionId, entryId)] ?? '',
@@ -57,11 +60,22 @@ export const useNotesStore = create<NotesState>()(
         // Deprecated — notes are now saved per-entry via listeningStore.saveDraft
       },
 
-      fetchPeerNotes: async (sessionId) => {
+      fetchPeerNotes: async (sessionId, force = false) => {
+        const { peerNotesFetchedFor } = get()
+        const FIVE_MIN = 5 * 60 * 1000
+        if (
+          !force &&
+          peerNotesFetchedFor?.sessionId === sessionId &&
+          Date.now() - peerNotesFetchedFor.at < FIVE_MIN
+        ) return
         set({ isFetchingPeers: true, peerFetchError: null })
         try {
           const data = await api.getNotes(sessionId)
-          set({ peerNotes: data.users, isFetchingPeers: false })
+          set({
+            peerNotes: data.users,
+            isFetchingPeers: false,
+            peerNotesFetchedFor: { sessionId, at: Date.now() },
+          })
         } catch (e) {
           set({ isFetchingPeers: false, peerFetchError: (e as Error).message })
         }
