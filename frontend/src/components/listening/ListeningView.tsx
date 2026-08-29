@@ -285,7 +285,7 @@ export default function ListeningView({ session, identity, locked }: Props) {
     !!pickerNote
 
   async function handleSave() {
-    await saveDraft(session.id, activeEntry.id, identity.userId, identity.userName)
+    await saveDraft(session.id, activeEntry.id)
   }
 
   return (

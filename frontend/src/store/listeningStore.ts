@@ -70,7 +70,7 @@ interface ListeningState {
   setPickerNote: (sessionId: string, entryId: string, note: string) => void
 
   // Save to DynamoDB (pushes current to history, writes new revision)
-  saveDraft: (sessionId: string, entryId: string, userId: string, userName: string) => Promise<void>
+  saveDraft: (sessionId: string, entryId: string) => Promise<void>
 
   // Pull this user's saved notes from DynamoDB into local state so they show
   // up on a fresh device. Never overwrites unsaved local edits — those are
@@ -162,7 +162,7 @@ export const useListeningStore = create<ListeningState>()(
           pickerNotes: { ...s.pickerNotes, [entryKey(sessionId, entryId)]: note },
         })),
 
-      saveDraft: async (sessionId, entryId, userId, userName) => {
+      saveDraft: async (sessionId, entryId) => {
         const state = get()
         const albumNotes = (state.drafts[draftKey(sessionId, entryId, 'album')] ?? '') as string
         const trackNotes = (state.drafts[draftKey(sessionId, entryId, 'tracks')] ?? {}) as Record<string, string>
@@ -185,7 +185,7 @@ export const useListeningStore = create<ListeningState>()(
 
         set({ isSaving: true, saveError: null })
         try {
-          await api.putNotes(sessionId, userId, userName, entryId, {
+          await api.putNotes(sessionId, entryId, {
             albumNotes,
             trackNotes,
             rating,

@@ -55,19 +55,16 @@ export const api = {
   getNotes: (sessionId: string) =>
     request<SessionNotes>(`/sessions/${sessionId}/notes`),
 
-  // NOTE: still takes userId/userName even though the backend will soon
-  // ignore them in favor of the verified JWT — see the auth rollout plan.
-  // Dropped in the cleanup pass once the backend enforces auth.
+  // Identity comes from the Authorization header (verified server-side) —
+  // no userId/userName in the body.
   putNotes: (
     sessionId: string,
-    userId: string,
-    userName: string,
     entryId: string,
     notes: { albumNotes: string; trackNotes: Record<string, string>; rating: number; pickerNote?: string; trackReactions?: Record<string, TrackReaction> },
   ) =>
     request<{ ok: boolean }>(`/sessions/${sessionId}/notes`, {
       method: 'PUT',
-      body: JSON.stringify({ userId, userName, entryId, notes }),
+      body: JSON.stringify({ entryId, notes }),
     }),
 
   lookupAlbum: (payload: LookupRequest) =>
