@@ -63,6 +63,17 @@ Resources:
         DetailedMetricsEnabled: false
         ThrottlingRateLimit: 10
         ThrottlingBurstLimit: 20
+      Auth:
+        Authorizers:
+          CognitoJwtAuthorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+              audience:
+                - !Ref UserPoolClient
+        # DefaultAuthorizer intentionally omitted for now — see the "enforce" deploy
+        # in the auth rollout plan. Attaching it here requires every handler to read
+        # requestContext.authorizer.jwt.claims, which they don't do until that step.
       CorsConfiguration:
         AllowOrigins:
           - !If [HasCustomDomain, !Sub 'https://${CustomDomain}', !Sub 'https://${CloudFrontDistribution.DomainName}']
@@ -75,7 +86,55 @@ Resources:
           - OPTIONS
         AllowHeaders:
           - Content-Type
+          - Authorization
         MaxAge: 300
+
+  # ── Auth ───────────────────────────────────────────────────────────────────
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: drunken-groove-society
+      DeletionProtection: ACTIVE
+      MfaConfiguration: 'OFF'
+      UsernameConfiguration:
+        CaseSensitive: false
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UserPoolTags:
+        Project: drunken-groove-society
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: dgs-spa
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 8
+      IdTokenValidity: 8
+      RefreshTokenValidity: 365
 
   # ── Lambda functions ───────────────────────────────────────────────────────
 
@@ -341,3 +400,11 @@ Outputs:
     Value: !Ref CloudFrontDistribution
     Export:
       Name: DGS-CloudFrontDistributionId
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: DGS-UserPoolId
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+    Export:
+      Name: DGS-UserPoolClientId
