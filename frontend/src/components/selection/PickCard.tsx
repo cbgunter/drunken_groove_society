@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Entry, LookupResult } from '../../types'
+import type { Entry } from '../../types'
 import { api } from '../../api/client'
 
 interface Props {
@@ -7,36 +7,6 @@ interface Props {
   onChange: (updates: Partial<Entry>) => void
   onSave: () => Promise<void> | void
   isSaving: boolean
-}
-
-async function fetchMusicBrainzTracklist(artist: string, album: string): Promise<string[]> {
-  try {
-    const query = `artist:"${artist}" AND release:"${album}"`
-    const searchRes = await fetch(
-      `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(query)}&limit=3&fmt=json`,
-    )
-    if (!searchRes.ok) return []
-    const searchData = await searchRes.json()
-    const releases: Array<{ id: string }> = searchData.releases ?? []
-    if (!releases.length) return []
-
-    const releaseRes = await fetch(
-      `https://musicbrainz.org/ws/2/release/${releases[0].id}?inc=recordings&fmt=json`,
-    )
-    if (!releaseRes.ok) return []
-    const releaseData = await releaseRes.json()
-
-    const tracks: string[] = []
-    for (const medium of releaseData.media ?? []) {
-      for (const track of medium.tracks ?? []) {
-        const name: string = track.title || track.recording?.title || ''
-        if (name) tracks.push(name)
-      }
-    }
-    return tracks
-  } catch {
-    return []
-  }
 }
 
 function TracklistEditor({
@@ -154,10 +124,7 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
     setIsLooking(true)
     setLookupError('')
     try {
-      const [result, mbTracks]: [LookupResult, string[]] = await Promise.all([
-        api.lookupAlbum({ artist: artist.trim(), album: album.trim() }),
-        fetchMusicBrainzTracklist(artist.trim(), album.trim()),
-      ])
+      const result = await api.lookupAlbum({ artist: artist.trim(), album: album.trim() })
       // Hold in local state — do NOT call onChange yet (would trigger phase change)
       setPending({
         artist: artist.trim(),
@@ -168,7 +135,7 @@ export default function PickCard({ entry, onChange, onSave, isSaving }: Props) {
         year: result.year,
         format: result.format,
         fun_facts: result.fun_facts,
-        tracklist: mbTracks.length > 0 ? mbTracks : result.tracklist,
+        tracklist: result.tracklist,
         external_link: result.external_link,
         badge_emoji: entry.badge_emoji,
       })

@@ -30,7 +30,7 @@ Deploys are automatic on push to `master` via two path-filtered workflows:
 - `.github/workflows/deploy-backend.yml` — triggers on changes to `backend/**`, `template.yaml`, or `samconfig.toml`. Runs `npm run build:backend` → `sam build` → `sam deploy`.
 - `.github/workflows/deploy-frontend.yml` — triggers on changes to `frontend/**`. Reads CloudFormation outputs for bucket/dist/API endpoint, runs `npm run build:frontend` with `VITE_API_BASE_URL`, syncs to S3, and invalidates CloudFront.
 
-Required GitHub Actions secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `ANTHROPIC_API_KEY`.
+Required GitHub Actions secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `ANTHROPIC_API_KEY`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`.
 
 `samconfig.toml` supplies the stack name, S3 artifact bucket, region, and custom domain parameter overrides.
 
@@ -39,7 +39,7 @@ Required GitHub Actions secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `
 ```bash
 # Backend (requires SAM CLI — use Cloud9)
 npm run build:backend && sam build
-sam deploy --parameter-overrides AnthropicApiKey=<key>
+sam deploy --parameter-overrides AnthropicApiKey=<key> SpotifyClientId=<id> SpotifyClientSecret=<secret>
 
 # Frontend
 bash scripts/deploy-frontend.sh
@@ -71,7 +71,7 @@ Session load order: local cache (`calendarStore.localSessions`) → DynamoDB →
 
 ### Session data model
 
-A `Session` (`frontend/src/types/index.ts`) is keyed by month (`YYYY-MM`). It has a `phase` (`selection` → `listening` → `done`) and a `locked` boolean. Each `Entry` belongs to one crew member (`selector`) and carries album metadata auto-populated via the `/lookup` Lambda (Claude API call).
+A `Session` (`frontend/src/types/index.ts`) is keyed by month (`YYYY-MM`). It has a `phase` (`selection` → `listening` → `done`) and a `locked` boolean. Each `Entry` belongs to one crew member (`selector`) and carries album metadata auto-populated via the `/lookup` Lambda (Spotify → MusicBrainz → Claude — see Backend Lambda handlers).
 
 ### Auth
 
@@ -93,8 +93,11 @@ All handlers are in `backend/src/handlers/`. Each exports a `handler` function f
 - `dynamo.ts` — DynamoDB Document Client, `TABLE` constant
 - `cors.ts` — `ok()` / `err()` response builders with CORS headers
 - `auth.ts` — `getCaller()` reads the verified `sub`/`name` claims off `event.requestContext.authorizer.jwt.claims`; `withAuth()` wraps a handler and 401s if they're missing
+- `match.ts` — shared fuzzy matching for `spotify.ts`/`musicbrainz.ts`: `normalize()` (diacritics, `(Deluxe Edition)` suffixes, `yr`→`your`, leading `the`), token-overlap `titlesMatch()` / `artistNameMatch()`, `EDITION_NOISE`, `cleanTrackName()` (strips `- Remastered 2009` off track titles), `parseYear()`, the `LookupFormat` type
+- `spotify.ts` — Spotify Web API client (client-credentials flow, module-level token cache); `lookupAlbumOnSpotify()` unions a field-filtered + a bare search, ranks the candidates (exact title, artist match, `album_type`, minus `EDITION_NOISE`), and returns exact tracklist / year / format / album URL. **This app's credentials are in Spotify "development mode": search `limit` is capped at 10, field filters mostly return nothing, and coverage is popularity-gated — mainstream albums resolve, a lot of underground catalog doesn't.**
+- `musicbrainz.ts` — no-key fallback for what Spotify's restricted search misses; `lookupAlbumOnMusicBrainz()` does a release-group search + a release browse (`inc=recordings`), picking the fewest-track official release to avoid deluxe padding. Sends a descriptive `User-Agent`, spaces its two calls ~1.1s (anonymous rate limit is ~1 req/s), and retries the frequent `503`s with backoff. Returns tracklist / year / format only (no prose, no link).
 
-The two Claude API handlers use specific models: `lookup.ts` calls Claude Sonnet 4.6 with `tool_choice` to return structured album metadata; `generateSummary.ts` calls Claude Haiku 4.5 to produce a markdown meeting guide.
+`lookup.ts` runs **Spotify, MusicBrainz, and Claude in parallel** (`Promise.all`). `tracklist` / `year` / `format` come from the first source that has them, in trust order Spotify → MusicBrainz → Claude; `external_link` is the Spotify album URL (only Spotify provides it), else Claude's `spotify_url`/`youtube_url`. Claude Sonnet 4.6 (`tool_choice`) is the only source for `about_band`, `about_album`, `genre_tags`, `fun_facts`. Spotify is first but not reconciled against MusicBrainz — a reissue like "Repeater + 3 Songs" wins over the vinyl original if Spotify matches it; the picker can fix the tracklist in the UI. `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` are set on `LookupFunction` only (not in `Globals`); Spotify and Claude each self-skip when their key is `PLACEHOLDER`, and the handler 502s only if all three sources come back empty. `generateSummary.ts` calls Claude Haiku 4.5 to produce a markdown meeting guide.
 
 **DynamoDB key scheme (single table `drunken-groove-society`):**
 
@@ -116,7 +119,7 @@ Every route requires a valid Cognito ID token (`Authorization: Bearer <token>`),
 | PUT | `/sessions/{id}` | PutSession |
 | GET | `/sessions/{id}/notes` | GetNotes |
 | PUT | `/sessions/{id}/notes` | PutNotes |
-| POST | `/lookup` | Lookup (Claude API) |
+| POST | `/lookup` | Lookup (Spotify → MusicBrainz → Claude API) |
 | POST | `/summary` | GenerateSummary (Claude API, 60s timeout) |
 | POST | `/send-summary` | SendSummary (SES) |
 

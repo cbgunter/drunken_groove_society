@@ -47,4 +47,6 @@ jobs:
         run: |
           sam deploy \
             --parameter-overrides \
-              AnthropicApiKey=${{ secrets.ANTHROPIC_API_KEY }}
+              AnthropicApiKey=${{ secrets.ANTHROPIC_API_KEY }} \
+              SpotifyClientId=${{ secrets.SPOTIFY_CLIENT_ID }} \
+              SpotifyClientSecret=${{ secrets.SPOTIFY_CLIENT_SECRET }}

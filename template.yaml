@@ -23,6 +23,16 @@ Parameters:
     Default: PLACEHOLDER
     NoEcho: true
     Description: Anthropic API key for summary generation (leave PLACEHOLDER until key is ready)
+  SpotifyClientId:
+    Type: String
+    Default: PLACEHOLDER
+    NoEcho: true
+    Description: Spotify API client ID for album lookup (client-credentials flow)
+  SpotifyClientSecret:
+    Type: String
+    Default: PLACEHOLDER
+    NoEcho: true
+    Description: Spotify API client secret for album lookup
   CertificateArn:
     Type: String
     Default: ''
@@ -208,6 +218,10 @@ Resources:
       CodeUri: backend/
       Handler: dist/handlers/lookup.handler
       Timeout: 30
+      Environment:
+        Variables:
+          SPOTIFY_CLIENT_ID: !Ref SpotifyClientId
+          SPOTIFY_CLIENT_SECRET: !Ref SpotifyClientSecret
       Events:
         Post:
           Type: HttpApi
