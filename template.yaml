@@ -71,9 +71,7 @@ Resources:
               issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
               audience:
                 - !Ref UserPoolClient
-        # DefaultAuthorizer intentionally omitted for now — see the "enforce" deploy
-        # in the auth rollout plan. Attaching it here requires every handler to read
-        # requestContext.authorizer.jwt.claims, which they don't do until that step.
+        DefaultAuthorizer: CognitoJwtAuthorizer
       CorsConfiguration:
         AllowOrigins:
           - !If [HasCustomDomain, !Sub 'https://${CustomDomain}', !Sub 'https://${CloudFrontDistribution.DomainName}']
