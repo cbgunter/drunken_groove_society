@@ -21,14 +21,30 @@ API_ENDPOINT=$(aws cloudformation describe-stacks \
   --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
   --output text)
 
-echo "  Bucket:   $BUCKET"
-echo "  Dist ID:  $DIST_ID"
-echo "  API:      $API_ENDPOINT"
+USER_POOL_ID=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK" --region "$REGION" \
+  --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" \
+  --output text)
+
+USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks \
+  --stack-name "$STACK" --region "$REGION" \
+  --query "Stacks[0].Outputs[?OutputKey=='UserPoolClientId'].OutputValue" \
+  --output text)
+
+echo "  Bucket:      $BUCKET"
+echo "  Dist ID:     $DIST_ID"
+echo "  API:         $API_ENDPOINT"
+echo "  User Pool:   $USER_POOL_ID"
+echo "  Pool Client: $USER_POOL_CLIENT_ID"
 
 echo ""
 echo "🔨 Building frontend…"
 cd "$(dirname "$0")/../frontend"
-VITE_API_BASE_URL="$API_ENDPOINT" npm run build
+VITE_API_BASE_URL="$API_ENDPOINT" \
+VITE_COGNITO_USER_POOL_ID="$USER_POOL_ID" \
+VITE_COGNITO_CLIENT_ID="$USER_POOL_CLIENT_ID" \
+VITE_AWS_REGION="$REGION" \
+  npm run build
 cd ..
 
 echo ""

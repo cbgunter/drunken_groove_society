@@ -1,11 +1,12 @@
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { QueryCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../lib/dynamo'
 import { ok, err } from '../lib/cors'
+import { withAuth } from '../lib/auth'
 
-export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
-  if (event.requestContext.http.method === 'OPTIONS') return ok({})
-
+// Deliberately still returns ALL users' notes for a session — that's the
+// meeting feature, not a leak. hydrateFromServer on the frontend filters to
+// the caller's own userId client-side.
+export const handler = withAuth(async (event) => {
   const sessionId = event.pathParameters?.id
   if (!sessionId) return err('Missing session id', 400)
 
@@ -29,4 +30,4 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   }))
 
   return ok({ sessionId, users })
-}
+})

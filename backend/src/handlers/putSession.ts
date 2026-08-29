@@ -1,11 +1,14 @@
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { PutCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../lib/dynamo'
 import { ok, err } from '../lib/cors'
+import { withAuth } from '../lib/auth'
 
-export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
-  if (event.requestContext.http.method === 'OPTIONS') return ok({})
-
+// Any authenticated caller can still write the whole session object here —
+// restricting a caller to only their own `selector`'s entry would break
+// MeetingView.handleEndMeeting -> lockSession -> saveToRemote, which
+// legitimately writes the whole session. Among three friends that isn't
+// the threat model; noted as a possible follow-up, not done here.
+export const handler = withAuth(async (event) => {
   const id = event.pathParameters?.id
   if (!id) return err('Missing session id', 400)
 
@@ -37,4 +40,4 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   )
 
   return ok({ id })
-}
+})

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Session, UserSessionNotes } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useCalendarStore } from '../../store/calendarStore'
 import { useNotesStore } from '../../store/notesStore'
+import { useListeningStore } from '../../store/listeningStore'
 import { formatMonthLabel } from '../../store/calendarStore'
 import SelectionView from '../selection/SelectionView'
 import ListeningView from '../listening/ListeningView'
@@ -27,6 +28,15 @@ export default function SessionView({ session, identity, month, onBack }: Props)
   const { saveToRemote, isSaving, error: saveError, unlockSession } = useSessionStore()
   const { updateMonthSummary } = useCalendarStore()
   const { fetchPeerNotes, peerFetchError, isFetchingPeers } = useNotesStore()
+  const hydrateFromServer = useListeningStore((s) => s.hydrateFromServer)
+
+  // Pull this user's saved notes from DynamoDB the moment a session opens —
+  // the local store has no idea what's on the server otherwise. Runs across
+  // every phase (selection/listening/done) since SessionView is mounted for
+  // all of them and remounts on month change.
+  useEffect(() => {
+    void hydrateFromServer(session.id, identity.userId)
+  }, [session.id, identity.userId, hydrateFromServer])
 
   const [isSaved, setIsSaved] = useState(!session.locked ? false : true)
   const [meetingMode, setMeetingMode] = useState(false)

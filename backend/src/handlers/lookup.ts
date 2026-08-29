@@ -1,12 +1,10 @@
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import Anthropic from '@anthropic-ai/sdk'
 import { ok, err } from '../lib/cors'
+import { withAuth } from '../lib/auth'
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? ''
 
-export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
-  if (event.requestContext.http.method === 'OPTIONS') return ok({})
-
+export const handler = withAuth(async (event) => {
   if (!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === 'PLACEHOLDER') {
     return err('Lookup unavailable — API key not configured', 503)
   }
@@ -114,4 +112,4 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     tracklist:     (data.tracklist ?? []).map((t: string) => t.replace(/^\d+\.\s*/, '').trim()),
     external_link,
   })
-}
+})

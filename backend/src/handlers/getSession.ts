@@ -1,11 +1,9 @@
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { GetCommand } from '@aws-sdk/lib-dynamodb'
 import { ddb, TABLE } from '../lib/dynamo'
 import { ok, err } from '../lib/cors'
+import { withAuth } from '../lib/auth'
 
-export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
-  if (event.requestContext.http.method === 'OPTIONS') return ok({})
-
+export const handler = withAuth(async (event) => {
   const id = event.pathParameters?.id
   if (!id) return err('Missing session id', 400)
 
@@ -22,4 +20,4 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   }
 
   return ok(session)
-}
+})

@@ -3,11 +3,11 @@ import type { ReactNode } from 'react'
 interface Props {
   onHome: () => void
   userName: string
-  onChangeIdentity: () => void
+  onSignOut: () => void
   children: ReactNode
 }
 
-export default function AppShell({ onHome, userName, onChangeIdentity, children }: Props) {
+export default function AppShell({ onHome, userName, onSignOut, children }: Props) {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <header
@@ -25,14 +25,14 @@ export default function AppShell({ onHome, userName, onChangeIdentity, children 
         </button>
 
         <button
-          onClick={onChangeIdentity}
+          onClick={onSignOut}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
           style={{
             background: userName ? 'var(--accent-light)' : 'var(--bg-elevated)',
             color: userName ? 'var(--accent)' : 'var(--text-muted)',
             border: `1px solid ${userName ? 'var(--accent)' : 'var(--border)'}`,
           }}
-          title="Change who you are"
+          title="Sign out"
         >
           {userName && (
             <span

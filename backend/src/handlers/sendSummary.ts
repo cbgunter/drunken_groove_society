@@ -1,14 +1,12 @@
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses'
 import { ok, err } from '../lib/cors'
+import { withAuth } from '../lib/auth'
 
 const ses = new SESClient({ region: 'us-east-1' })
 const FROM_EMAIL = process.env.FROM_EMAIL ?? ''
 const CREW_EMAILS = process.env.CREW_EMAILS ?? ''
 
-export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
-  if (event.requestContext.http.method === 'OPTIONS') return ok({})
-
+export const handler = withAuth(async (event) => {
   if (!FROM_EMAIL || !CREW_EMAILS) {
     return err('Email not configured', 503)
   }
@@ -37,4 +35,4 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   )
 
   return ok({ sent: true })
-}
+})
