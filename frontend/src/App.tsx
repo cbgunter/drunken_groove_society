@@ -1,27 +1,12 @@
 import { useEffect, useState } from 'react'
-import { nanoid } from 'nanoid'
 import { useSessionStore } from './store/sessionStore'
 import { useCalendarStore } from './store/calendarStore'
+import { useAuthStore } from './store/authStore'
 import AppShell from './components/layout/AppShell'
 import CalendarView from './components/calendar/CalendarView'
 import SessionView from './components/session/SessionView'
 import RosterSetup from './components/roster/RosterSetup'
 import { HISTORIC_SESSIONS, HISTORIC_ROSTER, SEED_VERSION, SKIPPED_MONTHS } from './utils/historicSeed'
-
-function getOrCreateUserId(name?: string): string {
-  // Each crew member gets a stable userId keyed to their name
-  const key = name ? `dgs_user_id_${name}` : 'dgs_user_id'
-  let id = localStorage.getItem(key)
-  if (!id) {
-    id = nanoid(10)
-    localStorage.setItem(key, id)
-  }
-  return id
-}
-
-function getUserName(): string {
-  return localStorage.getItem('dgs_user_name') ?? ''
-}
 
 type View = 'calendar' | 'month' | 'roster-setup' | 'roster-edit'
 
@@ -29,17 +14,13 @@ export default function App() {
   const { session, isLoading, error, loadOrCreateForMonth } = useSessionStore()
   const { roster, seedVersion, setRoster, putLocalSession, updateMonthSummary, markSeeded } =
     useCalendarStore()
+  // AuthGate guarantees a signed-in user by the time App ever renders.
+  const userId = useAuthStore((s) => s.userId!)
+  const userName = useAuthStore((s) => s.userName!)
+  const signOut = useAuthStore((s) => s.signOut)
 
   const [view, setView] = useState<View>('calendar')
   const [activeMonth, setActiveMonth] = useState<string | null>(null)
-  const [userName, setUserName] = useState(getUserName)
-  const [userId, setUserId] = useState(() => getOrCreateUserId(getUserName() || undefined))
-
-  function handleIdentityChange(name: string) {
-    localStorage.setItem('dgs_user_name', name)
-    setUserName(name)
-    setUserId(getOrCreateUserId(name))
-  }
 
   // Seed historic data — re-runs whenever SEED_VERSION is bumped
   useEffect(() => {
@@ -113,42 +94,24 @@ export default function App() {
     }
   }
 
-  // Identity prompt — shown on first visit or when user clicks to change
-  const [showIdentityPrompt, setShowIdentityPrompt] = useState(!userName)
-
-  const crewNames: string[] = roster ?? ['Corey', 'Doug', 'Mike']
+  // Cognito's `name` claim, the roster names, and Entry.selector all need to
+  // match exactly — see the identity mapping notes in the auth rollout plan.
+  // If they drift, phase detection silently gets stuck; surface it instead.
+  const rosterMismatch = roster !== null && !roster.includes(userName)
 
   return (
-    <AppShell
-      onHome={handleBackToCalendar}
-      userName={userName}
-      onChangeIdentity={() => setShowIdentityPrompt(true)}
-    >
-      {/* Identity picker — first visit or on request */}
-      {showIdentityPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div
-            className="w-full max-w-xs rounded-xl p-6 shadow-xl space-y-4"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-          >
-            <div>
-              <h2 className="text-lg font-semibold">Who are you?</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Your name will be saved with your notes.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {crewNames.map((name) => (
-                <button
-                  key={name}
-                  className="btn-primary justify-center text-sm py-2.5"
-                  onClick={() => { handleIdentityChange(name); setShowIdentityPrompt(false) }}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          </div>
+    <AppShell onHome={handleBackToCalendar} userName={userName} onSignOut={signOut}>
+      {rosterMismatch && (
+        <div
+          className="mb-4 rounded-lg px-3 py-2 text-sm flex items-center justify-between gap-3 flex-wrap"
+          style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+        >
+          <span>
+            You're signed in as <strong>{userName}</strong>, but the crew is set to {roster!.join(', ')}.
+          </span>
+          <button className="btn-ghost text-xs flex-shrink-0" onClick={() => setView('roster-edit')}>
+            Edit crew
+          </button>
         </div>
       )}
 

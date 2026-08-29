@@ -1,25 +1,17 @@
 import { useState } from 'react'
-import type { Entry, NoteRevision, Session, TrackReaction, UserSessionNotes } from '../../types'
+import type { Entry, Session, TrackReaction, UserSessionNotes } from '../../types'
 import { useSessionStore } from '../../store/sessionStore'
 import { useListeningStore } from '../../store/listeningStore'
 import { useCalendarStore } from '../../store/calendarStore'
 import { api } from '../../api/client'
 import { renderMarkdown } from '../../utils/markdown'
+import { resolveNoteRevision } from '../../utils/notes'
 
 interface Props {
   session: Session
   identity: { userId: string; userName: string }
   allNotes: UserSessionNotes[]
   onEndMeeting: (overallRatings: Record<string, number>) => void
-}
-
-// DynamoDB returns flat { albumNotes, trackNotes, rating }; local store wraps in { current: ... }
-function resolveNoteRevision(raw: unknown): NoteRevision | null {
-  if (!raw || typeof raw !== 'object') return null
-  const r = raw as Record<string, unknown>
-  if ('current' in r && r.current && typeof r.current === 'object') return r.current as NoteRevision
-  if ('albumNotes' in r || 'rating' in r || 'trackNotes' in r) return r as unknown as NoteRevision
-  return null
 }
 
 const REACTION_CONFIG: Record<TrackReaction, { label: string; color: string; text: string }> = {

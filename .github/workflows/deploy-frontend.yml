@@ -45,9 +45,19 @@ jobs:
             --stack-name "$STACK" --region "$REGION" \
             --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
             --output text)
+          USER_POOL_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK" --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" \
+            --output text)
+          USER_POOL_CLIENT_ID=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK" --region "$REGION" \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolClientId'].OutputValue" \
+            --output text)
           echo "bucket=$BUCKET" >> "$GITHUB_OUTPUT"
           echo "dist_id=$DIST_ID" >> "$GITHUB_OUTPUT"
           echo "api_endpoint=$API_ENDPOINT" >> "$GITHUB_OUTPUT"
+          echo "user_pool_id=$USER_POOL_ID" >> "$GITHUB_OUTPUT"
+          echo "user_pool_client_id=$USER_POOL_CLIENT_ID" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
@@ -56,6 +66,9 @@ jobs:
         run: npm run build:frontend
         env:
           VITE_API_BASE_URL: ${{ steps.stack.outputs.api_endpoint }}
+          VITE_COGNITO_USER_POOL_ID: ${{ steps.stack.outputs.user_pool_id }}
+          VITE_COGNITO_CLIENT_ID: ${{ steps.stack.outputs.user_pool_client_id }}
+          VITE_AWS_REGION: us-east-1
 
       - name: Sync versioned assets to S3
         run: |

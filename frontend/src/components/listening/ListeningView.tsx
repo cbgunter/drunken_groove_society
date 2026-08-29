@@ -258,6 +258,8 @@ export default function ListeningView({ session, identity, locked }: Props) {
     getTrackReactions, setTrackReaction,
     getPickerNote, setPickerNote,
     isSaving, saveError,
+    hydrationStatus, hydrationConflicts,
+    applyHydrationConflict, dismissHydrationConflict,
   } = useListeningStore()
 
   const activeEntry = session.entries.find((e) => e.id === activeEntryId) ?? session.entries[0]
@@ -272,6 +274,15 @@ export default function ListeningView({ session, identity, locked }: Props) {
   const history = getHistory(session.id, activeEntry.id)
 
   const isPicker = activeEntry.selector === identity.userName
+
+  const conflictKey = `${session.id}:${activeEntry.id}`
+  const conflict = hydrationConflicts[conflictKey]
+  const isHydrating = hydrationStatus[session.id] === 'loading'
+  const hasLocalContent =
+    (typeof albumNotes === 'string' && albumNotes.trim().length > 0) ||
+    Object.keys(trackNotes).length > 0 ||
+    rating > 0 ||
+    !!pickerNote
 
   async function handleSave() {
     await saveDraft(session.id, activeEntry.id, identity.userId, identity.userName)
@@ -340,6 +351,38 @@ export default function ListeningView({ session, identity, locked }: Props) {
           />
         </div>
 
+        {conflict && (
+          <div
+            className="text-xs px-3 py-2 rounded-lg flex items-center justify-between gap-3 flex-wrap"
+            style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+          >
+            <span>A newer version of this note was saved on another device.</span>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                className="btn-ghost text-xs"
+                onClick={() => dismissHydrationConflict(session.id, activeEntry.id)}
+              >
+                Keep mine
+              </button>
+              <button
+                className="btn-primary text-xs"
+                onClick={() => applyHydrationConflict(session.id, activeEntry.id)}
+              >
+                Load it
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isHydrating && !hasLocalContent ? (
+          <div className="flex items-center justify-center py-8">
+            <div
+              className="animate-spin rounded-full h-6 w-6 border-2"
+              style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
+            />
+          </div>
+        ) : (
+        <>
         {/* Picker's reason — only shown to the person who picked this album */}
         {isPicker && (
           <div
@@ -402,6 +445,8 @@ export default function ListeningView({ session, identity, locked }: Props) {
           onReaction={(track, reaction) => setTrackReaction(session.id, activeEntry.id, track, reaction)}
           readOnly={locked}
         />
+        </>
+        )}
 
         {/* Save + history */}
         {!locked && (
